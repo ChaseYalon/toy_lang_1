@@ -103,6 +103,13 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.pos += 5;
 			continue;
 		}
+		if ch == 'i' && l.peek(1) == 'f'{
+			l.flushStr();
+			l.flushInt();
+			l.tokens = append(l.tokens, *token.NewToken(token.IF, "if"));
+			l.eat();
+		}
+		
 		if ch == ';' {
 			l.flushInt()
 			l.flushStr()
@@ -195,7 +202,14 @@ func (l *Lexer) Lex(s string) []token.Token {
 					l.flushInt();
 					l.flushStr();
 					l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"));
-					
+				case ch == '{':
+					l.flushInt();
+					l.flushStr();
+					l.tokens = append(l.tokens, *token.NewToken(token.LBRACE, "{"));
+				case ch == '}':
+					l.flushInt();
+					l.flushStr();
+					l.tokens = append(l.tokens, *token.NewToken(token.RBRACE, "}"));
 				case unicode.IsLetter(ch):
 					l.flushInt()
 					l.currString = append(l.currString, ch)

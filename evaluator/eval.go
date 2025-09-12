@@ -45,6 +45,7 @@ func (i *Interpreter) execExpr(node ast.Node)int  {
 			return left * right
 		case token.DIVIDE:
 			return left / right
+			
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown operator: %v", n.Operator))
 		}
@@ -52,6 +53,43 @@ func (i *Interpreter) execExpr(node ast.Node)int  {
 	panic(fmt.Sprintf("[ERROR] Invalid expression: %v of type %v", node, node.NodeType().String()))
 }
 
+func (i *Interpreter) execBoolExpr(node ast.Node)bool{
+	if node.NodeType() == ast.BoolLiteral{
+		return node.(*ast.BoolLiteralNode).Value;
+	}
+	if node.NodeType() == ast.ReferenceExpr{
+		return i.execBoolExpr(i.vars[node.(*ast.ReferenceExprNode).Name]);
+	}
+	if node.NodeType() == ast.BoolInfix{
+		execNode := node.(*ast.BoolInfixNode);
+		if execNode.Operator == token.OR{
+			return i.execBoolExpr(execNode.Left) || i.execBoolExpr(execNode.Right);
+		}
+		if execNode.Operator == token.AND{
+			return i.execBoolExpr(execNode.Left) && i.execBoolExpr(execNode.Right);
+		}
+		if execNode.Operator == token.EQUALS{
+			return i.executeStmt(execNode.Left) == i.executeStmt(execNode.Right);
+		}
+		if execNode.Operator == token.LESS_THAN{
+			return i.execExpr(execNode.Left) < i.execExpr(execNode.Right);
+		}
+		if execNode.Operator == token.GREATER_THAN{
+			return i.execExpr(execNode.Left) > i.execExpr(execNode.Right);
+		}
+		if execNode.Operator == token.LESS_THAN_EQT{
+			return i.execExpr(execNode.Left) <= i.execExpr(execNode.Right);
+		}
+		if execNode.Operator == token.GREATER_THAN_EQT{
+			return i.execExpr(execNode.Left) >= i.execExpr(execNode.Right);
+		}
+	}
+	if node.NodeType() == ast.PrefixExpr{
+		execNode := node.(*ast.PrefixExprNode);
+		return !i.execBoolExpr(execNode.Value);
+	}
+	panic(fmt.Sprintf("[ERROR] Invalid expression: %v of type %v", node, node.NodeType().String()));
+}
 func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 	switch n := stmt.(type) {
 	case *ast.VarReassignNode:
@@ -62,6 +100,10 @@ func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 		}
 		if n.NewVal.NodeType() == ast.BoolLiteral{
 			i.vars[n.Var.Name] = n.NewVal;
+			return nil;
+		}
+		if n.NewVal.NodeType() == ast.BoolInfix{
+			i.vars[n.Var.Name] = &ast.BoolLiteralNode{Value: i.execBoolExpr(n.NewVal)};
 			return nil;
 		}
 
@@ -77,12 +119,17 @@ func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 			}
 			i.vars[n.Name] = boolNode;
 			return nil;
-		} else {
+		} else if(n.Value.NodeType() == ast.BoolInfix){
+			i.vars[n.Name] = &ast.BoolLiteralNode{Value: i.execBoolExpr(n.Value)};
+			return nil;
+		}else{
 			// Evaluate the initial value
 			val := i.execExpr(n.Value)
 			i.vars[n.Name] = &ast.IntLiteralNode{Value: val}
 			return nil
 		}
+	case *ast.BoolInfixNode:
+		return &ast.BoolLiteralNode{Value: i.execBoolExpr(n)};
 	case *ast.InfixExprNode, *ast.IntLiteralNode:
 		val := i.execExpr(n)
 		return &ast.IntLiteralNode{Value: val}

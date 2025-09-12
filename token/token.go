@@ -15,11 +15,14 @@ const (
 	//Syntax
 	SEMICOLON
 	ASSIGN
+	LBRACE
+	RBRACE
 	
-	//Vars
+	//Keywords
 	VAR_REF
 	VAR_NAME
 	LET
+	IF
 	
 	//Compound operators
 	COMPOUND_PLUS
