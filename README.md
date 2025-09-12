@@ -8,8 +8,8 @@ Roadmap:
     c. Evaluator tests --Done
 3. If / Else / Elsif statements
     a. Bool literals --Done
-    b. Bool Operations 
-    c. Bool Expressions
+    b. Bool Operations --Lexer and Parser Done, Evaluator TODO
+    c. Bool Expressions --Lexer and Parser Done, Evaluator TODO
     d. Variable Scopes
     e. Conditional Execution
     f. Else

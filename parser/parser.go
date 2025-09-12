@@ -27,188 +27,16 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.MINUS:    1,
 		token.MULTIPLY: 2,
 		token.DIVIDE:   2,
-		token.BOOLEAN: 0, 
-		token.INTEGER: 0, //Boolean and int should never be "bound to"
+		token.BOOLEAN:  100,
+		token.INTEGER:  100, //Boolean, int, and var ref should never be "bound to"
+		token.VAR_REF:  100,
+		token.AND:      3,
+		token.OR:       3,
+		token.NOT:      4, //Logical operators have lower precedence than arithmetic, not is lowest
+
 	}
 }
 
-func (p *Parser) parseVarAssign(toks []token.Token) ast.Node {
-	if toks[0].TokType != token.LET {
-		panic(fmt.Sprintf("[ERROR] Expected LET received %s", toks[0]))
-	}
-	if toks[1].TokType != token.VAR_NAME {
-		panic(fmt.Sprintf("[ERROR] Expected VAR_NAME received %s", toks[1]))
-	}
-	if toks[2].TokType != token.ASSIGN {
-		panic(fmt.Sprintf("[ERROR] Expected '=' received %s", toks[2]))
-	}
-	value := p.parseExpression(toks[3:])
-	return &ast.LetExprNode{
-		Name:  toks[1].Literal,
-		Value: value,
-	}
-}
-
-func (p *Parser) parseVarRef(toks []token.Token) *ast.ReferenceExprNode {
-
-	if toks[0].TokType != token.VAR_REF {
-		panic(fmt.Sprintf("[ERROR] Expected VAR_REF received %s", toks[0].TokType))
-	}
-	return &ast.ReferenceExprNode{
-		Name: toks[0].Literal,
-	}
-}
-
-func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
-	//Format should be <VAR_REF> = <VALUE>
-	if toks[0].TokType != token.VAR_REF {
-		panic(fmt.Sprintf("[ERROR] Could not find what variable to reassign, got: %v", toks[0]))
-	}
-	if toks[1].TokType != token.ASSIGN {
-		panic("[ERROR] Reassigning variables requires an equal sign between the name and the value")
-	}
-	referencedVar := ast.ReferenceExprNode{
-		Name: toks[0].Literal,
-	}
-	//Case 1: Reassigning to Int Literal
-	if toks[2].TokType == token.INTEGER {
-		newValInt, err := strconv.Atoi(toks[2].Literal)
-		if err != nil {
-			panic(fmt.Sprintf("[ERROR] Could not convert variable reassign value to int literal, got %v", toks[2].Literal))
-		}
-		return &ast.VarReassignNode{
-			Var: referencedVar,
-			NewVal: &ast.IntLiteralNode{
-				Value: newValInt,
-			},
-		}
-	}
-	//Case 2: Reassigning to boolean expression
-	if toks[2].TokType == token.BOOLEAN{
-		var boolVal bool;
-		if toks[2].Literal == "true"{
-			boolVal = true;
-		} else {
-			boolVal = false;
-		}
-		return &ast.VarReassignNode{
-			Var: referencedVar,
-			NewVal: &ast.BoolLiteralNode{
-				Value: boolVal,
-			},
-		}
-	}
-	//Case 3: Reassigning to an Infix Expression, Default case
-	exprToks := toks[2:]
-	newValExpr := p.parseExpression(exprToks)
-	return &ast.VarReassignNode{
-		Var:    referencedVar,
-		NewVal: newValExpr,
-	}
-}
-
-func (p *Parser) findLowestBp(toks []token.Token) (token.Token, int) {
-	p_table := p.generatePrecedenceTable()
-	lowestBp := 100000
-	lowestBpIdx := -1
-	var lowestOp token.Token
-	for i, val := range toks {
-		if val.TokType == token.PLUS || val.TokType == token.MINUS ||
-			val.TokType == token.MULTIPLY || val.TokType == token.DIVIDE {
-			if p_table[val.TokType] <= lowestBp {
-				lowestBp = p_table[val.TokType]
-				lowestOp = val
-				lowestBpIdx = i
-			}
-		}
-	}
-	if lowestBpIdx == -1 {
-		panic("[ERROR] No operator found in token slice")
-	}
-	return lowestOp, lowestBpIdx
-}
-
-func (p *Parser) parseExpression(toks []token.Token) ast.Node {
-	if len(toks) == 0 {
-		panic("[ERROR] parseExpression received empty token slice")
-	}
-	if len(toks) == 1 {
-		switch toks[0].TokType {
-		case token.INTEGER:
-			val, err := strconv.Atoi(toks[0].Literal)
-			if err != nil {
-				panic(fmt.Sprintf("[ERROR] Failed to convert %s to int", toks[0].Literal))
-			}
-			return &ast.IntLiteralNode{Value: val}
-		case token.BOOLEAN:
-			var boolVal bool;
-			if toks[0].Literal == "true"{
-				boolVal = true;
-			} else {
-				boolVal = false;
-			}
-			return &ast.BoolLiteralNode{Value: boolVal};
-		case token.VAR_REF:
-			return p.parseVarRef(toks)
-
-		}
-		
-	}
-
-	if len(toks) == 3 {
-		op := toks[1]
-		var left, right ast.Node
-
-		if toks[0].TokType == token.INTEGER {
-			val, _ := strconv.Atoi(toks[0].Literal)
-			left = &ast.IntLiteralNode{Value: val}
-		} else {
-			left = p.parseVarRef([]token.Token{toks[0]})
-		}
-
-		if toks[2].TokType == token.INTEGER {
-			val, _ := strconv.Atoi(toks[2].Literal)
-			right = &ast.IntLiteralNode{Value: val}
-		} else {
-			right = p.parseVarRef([]token.Token{toks[2]})
-		}
-
-		return &ast.InfixExprNode{
-			Left:     left,
-			Operator: op.TokType,
-			Right:    right,
-		}
-	}
-
-	// recursive for longer expressions
-	op, idx := p.findLowestBp(toks)
-	left := p.parseExpression(toks[:idx])
-	right := p.parseExpression(toks[idx+1:])
-	return &ast.InfixExprNode{
-		Left:     left,
-		Operator: op.TokType,
-		Right:    right,
-	}
-}
-
-func splitBySemiColon(toks []token.Token) [][]token.Token {
-	var result [][]token.Token
-	var current []token.Token
-	for _, t := range toks {
-		if t.TokType == token.SEMICOLON {
-			if len(current) > 0 {
-				result = append(result, current)
-			}
-			current = []token.Token{}
-		} else {
-			current = append(current, t)
-		}
-	}
-	if len(current) > 0 {
-		result = append(result, current)
-	}
-	return result
-}
 func (p *Parser) preProcess(tokens []token.Token) []token.Token {
 	//Handles preprocessing for compound operators
 	var toReturn []token.Token
@@ -255,27 +83,149 @@ func (p *Parser) preProcess(tokens []token.Token) []token.Token {
 	}
 	return toReturn
 }
-func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
-	u_in := p.preProcess(tokens)
-	lines := splitBySemiColon(u_in)
-	for _, line := range lines {
-		if len(line) == 0 {
+func (p *Parser) splitBySemicolon(tokens []token.Token) [][]token.Token {
+	var toReturn [][]token.Token
+	var current []token.Token
+	for _, val := range tokens {
+		if val.TokType == token.SEMICOLON {
+			toReturn = append(toReturn, current)
+			current = []token.Token{}
 			continue
 		}
-		switch line[0].TokType {
-		case token.LET:
-			p.program.Statements = append(p.program.Statements, p.parseVarAssign(line))
-		case token.VAR_REF:
-			if len(line) > 1 && line[1].TokType == token.ASSIGN {
-				p.program.Statements = append(p.program.Statements, p.parseVarReassign(line))
-			} else {
-				p.program.Statements = append(p.program.Statements, p.parseExpression(line))
-			}
-		case token.INTEGER:
-			p.program.Statements = append(p.program.Statements, p.parseExpression(line))
-		default:
-			panic(fmt.Sprintf("[ERROR] Unknown token: %v", line[0]))
+		current = append(current, val)
+	}
+	if len(current) > 0 {
+		toReturn = append(toReturn, current)
+	}
+	return toReturn
+}
+
+func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {
+	//Functional infinity to start
+	var lowestVal int = 10000000
+	var lowestToken token.Token
+	var lowestIndex int = -1
+	for i, tok := range tokens {
+		localVal := pt[tok.TokType]
+		if localVal < lowestVal {
+			lowestVal = localVal
+			lowestToken = tok
+			lowestIndex = i
 		}
+	}
+	return lowestToken, lowestIndex
+}
+func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
+	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
+	if lowestTok.TokType == token.INTEGER {
+		val, err := strconv.Atoi(lowestTok.Literal)
+		if err != nil {
+			panic(fmt.Sprintf("[ERROR] Could not convert from string to int literal, trying to convert %v", lowestTok))
+		}
+		return &ast.IntLiteralNode{Value: val}
+	}
+	if lowestTok.TokType == token.BOOLEAN {
+		val, err := strconv.ParseBool(lowestTok.Literal)
+		if err != nil {
+			panic(fmt.Sprintf("[ERROR] Could not convert from string to bool literal, trying to convert %v", lowestTok))
+		}
+		return &ast.BoolLiteralNode{Value: val}
+	}
+	if lowestTok.TokType == token.VAR_REF {
+		return &ast.ReferenceExprNode{Name: lowestTok.Literal}
+	}
+	if lowestIndex == -1 {
+		panic(fmt.Sprintf("[ERROR] Could not find lowest binding power operator, input was %+v\n", tokens))
+	}
+	switch lowestTok.TokType {
+	case token.AND, token.OR:
+		left := p.parseExpression(tokens[:lowestIndex])
+		right := p.parseExpression(tokens[lowestIndex+1:])
+		return &ast.BoolInfixNode{
+			Left:     left,
+			Operator: lowestTok.TokType,
+			Right:    right,
+		}
+	case token.NOT:
+		return &ast.PrefixExprNode{
+			Value:    p.parseExpression(tokens[lowestIndex+1:]),
+			Operator: token.NOT,
+		}
+
+	default:
+		left := p.parseExpression(tokens[:lowestIndex])
+		right := p.parseExpression(tokens[lowestIndex+1:])
+		return &ast.InfixExprNode{
+			Left:     left,
+			Operator: lowestTok.TokType,
+			Right:    right,
+		}
+	}
+}
+func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
+	//Do Sematic checks
+	if toks[0].TokType != token.LET {
+		panic(fmt.Sprintf("[ERROR] Let statement is required to initialize variable, got %v\n", toks[0]))
+	}
+	if toks[1].TokType != token.VAR_NAME {
+		panic(fmt.Sprintf("[ERROR] Could not figure out what to name variable, got %v\n", toks[1]))
+	}
+	if toks[2].TokType != token.ASSIGN {
+		panic(fmt.Sprintf("[ERROR] Assignment operator is required to assign value to variable, got %v\n", toks[2]))
+	}
+	name := toks[1].Literal
+	val := p.parseExpression(toks[3:])
+	return &ast.LetStmtNode{
+		Name:  name,
+		Value: val,
+	}
+
+}
+func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
+	if tok.TokType != token.VAR_REF {
+		panic(fmt.Sprintf("[ERROR] Expected name of variable, got %v\n", tok))
+	}
+	return &ast.ReferenceExprNode{
+		Name: tok.Literal,
+	}
+
+}
+func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
+	//Sematic checks
+	if toks[0].TokType != token.VAR_REF {
+		panic(fmt.Sprintf("[ERROR] Expected var name, got %v\n", toks[0]))
+	}
+	if toks[1].TokType != token.ASSIGN {
+		panic(fmt.Sprintf("[ERROR] Expected equals sign, got %v\n", toks[0]))
+	}
+	name := p.parseVarReference(toks[0])
+	value := p.parseExpression(toks[2:])
+	return &ast.VarReassignNode{
+		Var:    *name,
+		NewVal: value,
+	}
+}
+func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
+	var tokGroups [][]token.Token = p.splitBySemicolon(p.preProcess(tokens))
+	/*
+		At the start of each tok group there should be one of the following
+			Let -> Making New variable
+			Var_Ref -> Referencing old variable
+			Var_ref, assign -> Reassigning old variable
+	*/
+	for _, line := range tokGroups {
+		firstTok := line[0]
+		secondTok := line[1]
+		if firstTok.TokType == token.LET {
+			p.program.Statements = append(p.program.Statements, p.parseLetStmt(line))
+			continue
+		}
+		if firstTok.TokType == token.VAR_REF && secondTok.TokType == token.ASSIGN {
+			p.program.Statements = append(p.program.Statements, p.parseVarReassign(line))
+			continue
+		}
+		//If it is not a let statement or a reassign statement assume it an expression
+		p.program.Statements = append(p.program.Statements, p.parseExpression(line))
 	}
 	return p.program
 }

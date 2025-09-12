@@ -126,7 +126,7 @@ func TestPreParser(t *testing.T) {
 				*token.NewToken(token.VAR_REF, "x"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
-		},		
+		},
 		{
 			input: "let x = 1; x*=2; x/=x;",
 			output: []token.Token{
@@ -167,7 +167,7 @@ func TestParser(t *testing.T) {
 			input: "let x = 4;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.IntLiteralNode{
 							Value: 4,
@@ -180,7 +180,7 @@ func TestParser(t *testing.T) {
 			input: "let x = 4 + 5;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.InfixExprNode{
 							Left: &ast.IntLiteralNode{
@@ -199,7 +199,7 @@ func TestParser(t *testing.T) {
 			input: "let x = 9; x=x+3;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.IntLiteralNode{
 							Value: 9,
@@ -223,10 +223,10 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			input: "let x = 9; x = x + 3; let y = x / 4",
+			input: "let x = 9; x = x + 3; let y = x / 4;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.IntLiteralNode{
 							Value: 9,
@@ -246,7 +246,7 @@ func TestParser(t *testing.T) {
 							},
 						},
 					},
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "y",
 						Value: &ast.InfixExprNode{
 							Left: &ast.ReferenceExprNode{
@@ -265,13 +265,13 @@ func TestParser(t *testing.T) {
 			input: "let x = true; let y = 4;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.BoolLiteralNode{
 							Value: true,
 						},
 					},
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "y",
 						Value: &ast.IntLiteralNode{
 							Value: 4,
@@ -284,7 +284,7 @@ func TestParser(t *testing.T) {
 			input: "let x = true || false;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.BoolInfixNode{
 							Left: &ast.BoolLiteralNode{
@@ -303,24 +303,65 @@ func TestParser(t *testing.T) {
 			input: "let x = true; let y = !x && !true;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.BoolLiteralNode{
 							Value: true,
 						},
 					},
-					&ast.LetExprNode{
+					&ast.LetStmtNode{
+						Name: "y",
+						Value: &ast.BoolInfixNode{
+							Left: &ast.PrefixExprNode{
+								Operator: token.NOT,
+								Value:    &ast.ReferenceExprNode{Name: "x"},
+							},
+							Operator: token.AND,
+							Right: &ast.PrefixExprNode{
+								Operator: token.NOT,
+								Value:    &ast.BoolLiteralNode{Value: true},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let x = 5 < 6;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.BoolInfixNode{
+							Left: &ast.IntLiteralNode{Value: 5},
+							Operator: token.LESS_THAN,
+							Right: &ast.IntLiteralNode{Value: 6},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let x = 5 >= 6; let y = !x || true;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.BoolInfixNode{
+							Left: &ast.IntLiteralNode{Value: 5},
+							Operator: token.GREATER_THAN_EQT,
+							Right: &ast.IntLiteralNode{Value: 6},
+						},
+					},
+					&ast.LetStmtNode{
 						Name: "y",
 						Value: &ast.BoolInfixNode{
 							Left: &ast.PrefixExprNode{
 								Operator: token.NOT,
 								Value: &ast.ReferenceExprNode{Name: "x"},
 							},
-							Operator: token.AND,
-							Right: &ast.PrefixExprNode{
-								Operator: token.NOT,
-								Value: &ast.BoolLiteralNode{Value: true},
-							},
+							Operator: token.OR,
+							Right: &ast.BoolLiteralNode{Value: true},
 						},
 					},
 				},

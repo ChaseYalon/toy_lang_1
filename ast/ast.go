@@ -14,7 +14,7 @@ type Node interface {
 
 const (
 	Program AstNode = iota
-	LetExpr
+	LetStmt
 	InfixExpr
 	IntLiteral
 	ReferenceExpr
@@ -26,8 +26,8 @@ const (
 
 func (n AstNode) String() string {
 	switch n {
-	case LetExpr:
-		return "LET_EXPR"
+	case LetStmt:
+		return "LET_STMT"
 	case InfixExpr:
 		return "INFIX_EXPR"
 	case IntLiteral:
@@ -46,16 +46,16 @@ func (n AstNode) String() string {
 }
 
 // Let Expression
-type LetExprNode struct {
+type LetStmtNode struct {
 	Name  string
 	Value Node
 }
 
-func (n *LetExprNode) NodeType() AstNode {
-	return LetExpr
+func (n *LetStmtNode) NodeType() AstNode {
+	return LetStmt
 }
 
-func (n *LetExprNode)String() string{
+func (n *LetStmtNode)String() string{
 	return fmt.Sprintf("%v = %v", n.Name, n.Value);
 }
 // Infix Expression

@@ -53,6 +53,28 @@ func TestEvaluator(t *testing.T){
 				"x": &ast.BoolLiteralNode{Value: false},
 			},
 		},
+		{
+			input: "let x = true; let y = false; let z = x || y;",
+			output: map[string]ast.Node{
+				"x": &ast.BoolLiteralNode{Value: true},
+				"y": &ast.BoolLiteralNode{Value: false},
+				"z": &ast.BoolLiteralNode{Value: true},
+			},
+		},
+		{
+			input: "let x = true; let y = x && false;",
+			output: map[string]ast.Node{
+				"x": &ast.BoolLiteralNode{Value: true},
+				"y": &ast.BoolLiteralNode{Value: false},
+			},	
+		},
+		{
+			input: "let x = true; let y = !!x && true",
+			output: map[string]ast.Node{
+				"x": &ast.BoolLiteralNode{Value: true},
+				"y": &ast.BoolLiteralNode{Value: true},
+			},
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer();

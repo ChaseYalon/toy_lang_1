@@ -69,7 +69,7 @@ func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 		newVal := i.execExpr(n.NewVal)
 		i.vars[n.Var.Name] = &ast.IntLiteralNode{Value: newVal}
 		return nil
-	case *ast.LetExprNode:
+	case *ast.LetStmtNode:
 		if n.Value.NodeType() == ast.BoolLiteral{
 			boolNode, ok := n.Value.(*ast.BoolLiteralNode);
 			if !ok{
