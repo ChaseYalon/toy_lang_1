@@ -11,19 +11,19 @@ const (
 	MINUS
 	MULTIPLY
 	DIVIDE
-	
+
 	//Syntax
 	SEMICOLON
 	ASSIGN
 	LBRACE
 	RBRACE
-	
+
 	//Keywords
 	VAR_REF
 	VAR_NAME
 	LET
 	IF
-	
+
 	//Compound operators
 	COMPOUND_PLUS
 	COMPOUND_MINUS
@@ -31,7 +31,7 @@ const (
 	COMPOUND_DIVIDE
 	PLUS_PLUS
 	MINUS_MINUS
-	
+
 	//Datatypes
 	INTEGER
 	BOOLEAN
@@ -101,6 +101,12 @@ func (t TokenType) String() string {
 		return "||"
 	case NOT:
 		return "!"
+	case IF:
+		return "IF"
+	case LBRACE:
+		return "{"
+	case RBRACE:
+		return "}"
 	default:
 		return "UNKNOWN"
 	}

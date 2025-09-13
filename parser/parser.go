@@ -23,73 +23,104 @@ func NewParser() *Parser {
 
 func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 	return map[token.TokenType]int{
-		token.PLUS:     1,
-		token.MINUS:    1,
-		token.MULTIPLY: 2,
-		token.DIVIDE:   2,
-		token.BOOLEAN:  100,
-		token.INTEGER:  100, //Boolean, int, and var ref should never be "bound to"
-		token.VAR_REF:  100,
-		token.AND:      3,
-		token.OR:       3,
-		token.NOT:      4, //Logical operators have lower precedence than arithmetic, not is lowest
-
+		token.PLUS:               1,
+		token.MINUS:              1,
+		token.MULTIPLY:           2,
+		token.DIVIDE:             2,
+		token.BOOLEAN:            100,
+		token.INTEGER:            100, // Boolean, int, and var ref should never be "bound to"
+		token.VAR_REF:            100,
+		token.AND:                3,
+		token.OR:                 3,
+		token.NOT:                4, // Logical operators have lower precedence than arithmetic, not is lowest
+		token.LESS_THAN:          3,
+		token.LESS_THAN_EQT:      3,
+		token.GREATER_THAN:       3,
+		token.GREATER_THAN_EQT:   3,
 	}
 }
 
 func (p *Parser) preProcess(tokens []token.Token) []token.Token {
-	//Handles preprocessing for compound operators
+	// Handles preprocessing for compound operators
 	var toReturn []token.Token
 	for i, val := range tokens {
 		if val.TokType == token.COMPOUND_PLUS {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.PLUS, "+"))
-			continue
+			// ensure there's a left-hand token available
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.PLUS, "+"))
+				continue
+			}
 		}
 		if val.TokType == token.PLUS_PLUS {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.PLUS, "+"))
-			toReturn = append(toReturn, *token.NewToken(token.INTEGER, "1"))
-			continue
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.PLUS, "+"))
+				toReturn = append(toReturn, *token.NewToken(token.INTEGER, "1"))
+				continue
+			}
 		}
 		if val.TokType == token.COMPOUND_MINUS {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.MINUS, "-"))
-			continue
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.MINUS, "-"))
+				continue
+			}
 		}
 		if val.TokType == token.MINUS_MINUS {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.MINUS, "-"))
-			toReturn = append(toReturn, *token.NewToken(token.INTEGER, "1"))
-			continue
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.MINUS, "-"))
+				toReturn = append(toReturn, *token.NewToken(token.INTEGER, "1"))
+				continue
+			}
 		}
 		if val.TokType == token.COMPOUND_MULTIPLY {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.MULTIPLY, "*"))
-			continue
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.MULTIPLY, "*"))
+				continue
+			}
 		}
 		if val.TokType == token.COMPOUND_DIVIDE {
-			toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
-			toReturn = append(toReturn, tokens[i-1])
-			toReturn = append(toReturn, *token.NewToken(token.DIVIDE, "/"))
-			continue
+			if i-1 >= 0 {
+				toReturn = append(toReturn, *token.NewToken(token.ASSIGN, "="))
+				toReturn = append(toReturn, tokens[i-1])
+				toReturn = append(toReturn, *token.NewToken(token.DIVIDE, "/"))
+				continue
+			}
 		}
 		toReturn = append(toReturn, val)
 	}
 	return toReturn
 }
-func (p *Parser) splitBySemicolon(tokens []token.Token) [][]token.Token {
+
+func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
 	var toReturn [][]token.Token
+	var inIfMode bool = false
 	var current []token.Token
 	for _, val := range tokens {
-		if val.TokType == token.SEMICOLON {
+		if val.TokType == token.SEMICOLON && !inIfMode {
 			toReturn = append(toReturn, current)
 			current = []token.Token{}
+			continue
+		}
+		if val.TokType == token.IF {
+			inIfMode = true
+			current = append(current, val)
+			continue
+		}
+		// TEMPORARY CODE - THIS IS BAD
+		if inIfMode && val.TokType == token.RBRACE {
+			current = append(current, val)
+			toReturn = append(toReturn, current)
+			current = []token.Token{}
+			inIfMode = false
 			continue
 		}
 		current = append(current, val)
@@ -101,7 +132,7 @@ func (p *Parser) splitBySemicolon(tokens []token.Token) [][]token.Token {
 }
 
 func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {
-	//Functional infinity to start
+	// Functional infinity to start
 	var lowestVal int = 10000000
 	var lowestToken token.Token
 	var lowestIndex int = -1
@@ -115,6 +146,7 @@ func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) 
 	}
 	return lowestToken, lowestIndex
 }
+
 func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
 	if lowestTok.TokType == token.INTEGER {
@@ -138,7 +170,7 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 		panic(fmt.Sprintf("[ERROR] Could not find lowest binding power operator, input was %+v\n", tokens))
 	}
 	switch lowestTok.TokType {
-	case token.AND, token.OR:
+	case token.AND, token.OR, token.LESS_THAN, token.LESS_THAN_EQT, token.GREATER_THAN, token.GREATER_THAN_EQT:
 		left := p.parseExpression(tokens[:lowestIndex])
 		right := p.parseExpression(tokens[lowestIndex+1:])
 		return &ast.BoolInfixNode{
@@ -151,7 +183,6 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 			Value:    p.parseExpression(tokens[lowestIndex+1:]),
 			Operator: token.NOT,
 		}
-
 	default:
 		left := p.parseExpression(tokens[:lowestIndex])
 		right := p.parseExpression(tokens[lowestIndex+1:])
@@ -162,8 +193,9 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 		}
 	}
 }
+
 func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
-	//Do Sematic checks
+	// Do Sematic checks
 	if toks[0].TokType != token.LET {
 		panic(fmt.Sprintf("[ERROR] Let statement is required to initialize variable, got %v\n", toks[0]))
 	}
@@ -179,8 +211,57 @@ func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
 		Name:  name,
 		Value: val,
 	}
-
 }
+
+func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
+	// Do sematic analysis
+	if toks[0].TokType != token.IF {
+		panic(fmt.Sprintf("[ERROR] Expected \"IF\" got %v\n", toks[0]))
+	}
+
+	// Calculate condition
+	var condToks []token.Token
+	condLen := 0
+	for i, val := range toks[1:] {
+		if val.TokType != token.LBRACE {
+			condToks = append(condToks, val)
+		} else {
+			condLen = i
+			break
+		}
+	}
+	cond := p.parseExpression(condToks)
+	body := p.splitIntoLines(toks[condLen+2 : len(toks)-1])
+	var parsedStmts []ast.Node
+	for _, val := range body {
+		n := p.parseStmt(val)
+		if n != nil {
+			parsedStmts = append(parsedStmts, n)
+		}
+	}
+	if cond.NodeType() == ast.BoolLiteral {
+		boolCond, ok := cond.(*ast.BoolLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %+v\n", cond))
+		}
+		return &ast.IfStmtNode{
+			Cond: boolCond,
+			Body: parsedStmts,
+		}
+	}
+	if cond.NodeType() == ast.BoolInfix {
+		boolCond, ok := cond.(*ast.BoolInfixNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
+		}
+		return &ast.IfStmtNode{
+			Cond: boolCond,
+			Body: parsedStmts,
+		}
+	}
+	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
+}
+
 func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
 	if tok.TokType != token.VAR_REF {
 		panic(fmt.Sprintf("[ERROR] Expected name of variable, got %v\n", tok))
@@ -188,10 +269,10 @@ func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
 	return &ast.ReferenceExprNode{
 		Name: tok.Literal,
 	}
-
 }
+
 func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
-	//Sematic checks
+	// Sematic checks
 	if toks[0].TokType != token.VAR_REF {
 		panic(fmt.Sprintf("[ERROR] Expected var name, got %v\n", toks[0]))
 	}
@@ -205,8 +286,44 @@ func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
 		NewVal: value,
 	}
 }
+
+func (p *Parser) parseStmt(line []token.Token) ast.Node {
+	if len(line) == 0 {
+		return nil
+	}
+
+	firstTok := line[0]
+
+	// Avoid indexing line[1] if the line length is 1
+	var secondTok token.Token
+	if len(line) > 1 {
+		secondTok = line[1]
+	}
+
+	// Skip lone braces or semicolons that ended up as their own "line"
+	if len(line) == 1 {
+		if firstTok.TokType == token.RBRACE || firstTok.TokType == token.LBRACE || firstTok.TokType == token.SEMICOLON {
+			return nil
+		}
+		// For single-token lines, let parseExpression handle literals and var refs.
+		return p.parseExpression(line)
+	}
+
+	if firstTok.TokType == token.LET {
+		return p.parseLetStmt(line)
+	}
+	if firstTok.TokType == token.VAR_REF && secondTok.TokType == token.ASSIGN {
+		return p.parseVarReassign(line)
+	}
+	if firstTok.TokType == token.IF {
+		return p.parseIfStmt(line)
+	}
+	// If it is not a let statement or a reassign statement assume it is an expression
+	return p.parseExpression(line)
+}
+
 func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
-	var tokGroups [][]token.Token = p.splitBySemicolon(p.preProcess(tokens))
+	var tokGroups [][]token.Token = p.splitIntoLines(p.preProcess(tokens))
 	/*
 		At the start of each tok group there should be one of the following
 			Let -> Making New variable
@@ -214,18 +331,10 @@ func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
 			Var_ref, assign -> Reassigning old variable
 	*/
 	for _, line := range tokGroups {
-		firstTok := line[0]
-		secondTok := line[1]
-		if firstTok.TokType == token.LET {
-			p.program.Statements = append(p.program.Statements, p.parseLetStmt(line))
-			continue
+		n := p.parseStmt(line)
+		if n != nil {
+			p.program.Statements = append(p.program.Statements, n)
 		}
-		if firstTok.TokType == token.VAR_REF && secondTok.TokType == token.ASSIGN {
-			p.program.Statements = append(p.program.Statements, p.parseVarReassign(line))
-			continue
-		}
-		//If it is not a let statement or a reassign statement assume it an expression
-		p.program.Statements = append(p.program.Statements, p.parseExpression(line))
 	}
 	return p.program
 }

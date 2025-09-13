@@ -1,13 +1,18 @@
 package ast
 
 import (
-	"toy_lang/token"
 	"fmt"
+	"toy_lang/token"
 )
 
 type AstNode int
 
 type Node interface {
+	NodeType() AstNode
+	String() string
+}
+type Bool interface {
+	isBool()
 	NodeType() AstNode
 	String() string
 }
@@ -22,6 +27,7 @@ const (
 	BoolLiteral
 	BoolInfix
 	PrefixExpr
+	IfStmt
 )
 
 func (n AstNode) String() string {
@@ -40,6 +46,10 @@ func (n AstNode) String() string {
 		return "BOOL_LITERAL"
 	case BoolInfix:
 		return "BOOL_INFIX"
+	case IfStmt:
+		return "IF_STMT"
+	case PrefixExpr:
+		return "PREFIX_EXPR"
 	default:
 		return "ILLEGAL"
 	}
@@ -55,9 +65,10 @@ func (n *LetStmtNode) NodeType() AstNode {
 	return LetStmt
 }
 
-func (n *LetStmtNode)String() string{
-	return fmt.Sprintf("%v = %v", n.Name, n.Value);
+func (n *LetStmtNode) String() string {
+	return fmt.Sprintf("%v = %v", n.Name, n.Value)
 }
+
 // Infix Expression
 type InfixExprNode struct {
 	Left     Node
@@ -68,10 +79,11 @@ type InfixExprNode struct {
 func (n *InfixExprNode) NodeType() AstNode {
 	return InfixExpr
 }
-func (n *InfixExprNode) String()string{
-	return fmt.Sprintf("(%v %v %v)", n.Left, n.Operator, n.Right);
+func (n *InfixExprNode) String() string {
+	return fmt.Sprintf("(%v %v %v)", n.Left, n.Operator, n.Right)
 
 }
+
 // Integer Literal
 type IntLiteralNode struct {
 	Value int
@@ -81,8 +93,8 @@ func (n *IntLiteralNode) NodeType() AstNode {
 	return IntLiteral
 }
 
-func (n *IntLiteralNode)String() string{
-	return fmt.Sprintf("INT(%d)", n.Value);
+func (n *IntLiteralNode) String() string {
+	return fmt.Sprintf("INT(%d)", n.Value)
 }
 
 // Variable Reference
@@ -93,21 +105,21 @@ type ReferenceExprNode struct {
 func (n *ReferenceExprNode) NodeType() AstNode {
 	return ReferenceExpr
 }
-func (n *ReferenceExprNode)String() string{
-	return fmt.Sprintf("REFERENCE(%v)", n.Name);
+func (n *ReferenceExprNode) String() string {
+	return fmt.Sprintf("REFERENCE(%v)", n.Name)
 }
 
-type VarReassignNode struct{
-	Var ReferenceExprNode
+type VarReassignNode struct {
+	Var    ReferenceExprNode
 	NewVal Node
 }
 
-func (n *VarReassignNode) NodeType() AstNode{
+func (n *VarReassignNode) NodeType() AstNode {
 	return VarReassign
 }
 
-func (n *VarReassignNode) String()string{
-	return fmt.Sprintf("REASSIGN(%v) = %v", n.Var, n.NewVal);
+func (n *VarReassignNode) String() string {
+	return fmt.Sprintf("REASSIGN(%v) = %v", n.Var, n.NewVal)
 }
 
 // Program
@@ -118,13 +130,13 @@ type ProgramNode struct {
 func (n *ProgramNode) NodeType() AstNode {
 	return Program
 }
-func (n *ProgramNode)String() string{
-	str := "Program{\n";
-	for _, val := range n.Statements{
-		str += (val.String() + ",\n");
+func (n *ProgramNode) String() string {
+	str := "Program{\n"
+	for _, val := range n.Statements {
+		str += (val.String() + ",\n")
 	}
 	str += "}"
-	return str;
+	return str
 
 }
 
@@ -132,34 +144,55 @@ func (n *ProgramNode)String() string{
 type BoolLiteralNode struct {
 	Value bool
 }
-func (n *BoolLiteralNode) NodeType() AstNode{
+
+func (n *BoolLiteralNode) NodeType() AstNode {
 	return BoolLiteral
 }
-func (n *BoolLiteralNode) String() string{
-	if n.Value{
+func (n *BoolLiteralNode) String() string {
+	if n.Value {
 		return "true"
 	}
 	return "false"
 }
 
-type BoolInfixNode struct{
-	Left Node
+//Annoying thing to make go work
+func (n *BoolLiteralNode) isBool() {}
+
+type BoolInfixNode struct {
+	Left     Node
 	Operator token.TokenType
-	Right Node
+	Right    Node
 }
-func (n *BoolInfixNode) NodeType() AstNode{
-	return BoolInfix;
+
+func (n *BoolInfixNode) NodeType() AstNode {
+	return BoolInfix
 }
-func (n *BoolInfixNode) String()string{
-	return fmt.Sprintf("(%v %v %v)", n.Left, n.Operator, n.Right);
+func (n *BoolInfixNode) String() string {
+	return fmt.Sprintf("(%v %v %v)", n.Left, n.Operator, n.Right)
 }
-type PrefixExprNode struct{
-	Value Node
+func (n *BoolInfixNode) isBool() {}
+
+type PrefixExprNode struct {
+	Value    Node
 	Operator token.TokenType
 }
-func (n *PrefixExprNode)NodeType() AstNode{
-	return PrefixExpr;
+
+func (n *PrefixExprNode) NodeType() AstNode {
+	return PrefixExpr
 }
-func (n *PrefixExprNode)String()string{
-	return fmt.Sprintf("%v%v", n.Operator, n.Value);
+func (n *PrefixExprNode) String() string {
+	return fmt.Sprintf("%v%v", n.Operator, n.Value)
+}
+func (n *PrefixExprNode) isBool() {}
+
+type IfStmtNode struct {
+	Cond Bool
+	Body []Node
+}
+
+func (n *IfStmtNode) NodeType() AstNode {
+	return IfStmt
+}
+func (n *IfStmtNode) String() string {
+	return fmt.Sprintf("if %v{\n%+v\n}", n.Cond, n.Body)
 }

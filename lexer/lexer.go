@@ -75,7 +75,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.flushInt()
 			l.flushStr()
 			l.eat()
-			continue;
+			continue
 		}
 
 		if (ch == 'l' || ch == 'L') &&
@@ -89,27 +89,28 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.pos += 3
 			continue
 		}
-		if ch == 't' && l.peek(1) == 'r' && l.peek(2) == 'u' && l.peek(3) == 'e'{
-			l.flushStr();
-			l.flushInt();
-			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "true"));
-			l.pos += 4;
-			continue;
+		if ch == 't' && l.peek(1) == 'r' && l.peek(2) == 'u' && l.peek(3) == 'e' {
+			l.flushStr()
+			l.flushInt()
+			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "true"))
+			l.pos += 4
+			continue
 		}
-		if ch == 'f' && l.peek(1) == 'a' && l.peek(2) == 'l' && l.peek(3) == 's' && l.peek(4) == 'e'{
-			l.flushStr();
-			l.flushInt();
-			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "false"));
-			l.pos += 5;
-			continue;
+		if ch == 'f' && l.peek(1) == 'a' && l.peek(2) == 'l' && l.peek(3) == 's' && l.peek(4) == 'e' {
+			l.flushStr()
+			l.flushInt()
+			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "false"))
+			l.pos += 5
+			continue
 		}
-		if ch == 'i' && l.peek(1) == 'f'{
-			l.flushStr();
-			l.flushInt();
-			l.tokens = append(l.tokens, *token.NewToken(token.IF, "if"));
-			l.eat();
+		if ch == 'i' && l.peek(1) == 'f' {
+			l.flushStr()
+			l.flushInt()
+			l.tokens = append(l.tokens, *token.NewToken(token.IF, "if"))
+			l.pos += 2
+			continue
 		}
-		
+
 		if ch == ';' {
 			l.flushInt()
 			l.flushStr()
@@ -124,109 +125,109 @@ func (l *Lexer) Lex(s string) []token.Token {
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_PLUS, "+="))
 				l.eat()
-				} else if l.peek(1) == '+' {
-					l.tokens = append(l.tokens, *token.NewToken(token.PLUS_PLUS, "++"))
-					l.eat()
-					} else {
-						l.tokens = append(l.tokens, *token.NewToken(token.PLUS, "+"))
-					}
-				case ch == '-':
-					l.flushInt()
-					l.flushStr()
-					if l.peek(1) == '=' {
+			} else if l.peek(1) == '+' {
+				l.tokens = append(l.tokens, *token.NewToken(token.PLUS_PLUS, "++"))
+				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.PLUS, "+"))
+			}
+		case ch == '-':
+			l.flushInt()
+			l.flushStr()
+			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_MINUS, "-="))
 				l.eat()
-				} else if l.peek(1) == '-' {
-					l.tokens = append(l.tokens, *token.NewToken(token.MINUS_MINUS, "--"))
-					l.eat()
-					} else {
-						l.tokens = append(l.tokens, *token.NewToken(token.MINUS, "-"))
-					}
-				case ch == '*':
-					l.flushInt()
-					l.flushStr()
+			} else if l.peek(1) == '-' {
+				l.tokens = append(l.tokens, *token.NewToken(token.MINUS_MINUS, "--"))
+				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.MINUS, "-"))
+			}
+		case ch == '*':
+			l.flushInt()
+			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_MULTIPLY, "*="))
 				l.eat()
-				} else {
-					l.tokens = append(l.tokens, *token.NewToken(token.MULTIPLY, "*"))
-				}
-			case ch == '/':
-				l.flushInt()
-				l.flushStr()
-				if l.peek(1) == '=' {
-					l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_DIVIDE, "/="))
-					l.eat()
-					} else {
-						l.tokens = append(l.tokens, *token.NewToken(token.DIVIDE, "/"))
-					}
-				case ch == '=':
-					l.flushInt()
-					l.flushStr()
-					if l.peek(1) == '='{
-						l.tokens = append(l.tokens, *token.NewToken(token.EQUALS, "=="));
-						l.eat();
-					} else {
-
-						l.tokens = append(l.tokens, *token.NewToken(token.ASSIGN, "="))
-					}
-				case ch == '>':
-					l.flushInt();
-					l.flushStr();
-					if l.peek(1) == '='{
-						l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN_EQT, ">="))
-						l.eat();
-					} else {
-						l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN, ">"));
-					}
-				case ch == '<':
-					l.flushInt();
-					l.flushStr();
-					if l.peek(1) == '='{
-						l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN_EQT, "<="));
-						l.eat();
-					} else {
-						l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN, "<"));
-					}
-				case ch == '&' && l.peek(1) == '&':
-					l.flushInt();
-					l.flushStr();
-					l.tokens = append(l.tokens, *token.NewToken(token.AND, "&&"));
-					l.eat();
-				case ch == '|' && l.peek(1) == '|':
-					l.flushInt();
-					l.flushStr();
-					l.tokens = append(l.tokens, *token.NewToken(token.OR, "||"));
-					l.eat();
-				case ch == '!':
-					l.flushInt();
-					l.flushStr();
-					l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"));
-				case ch == '{':
-					l.flushInt();
-					l.flushStr();
-					l.tokens = append(l.tokens, *token.NewToken(token.LBRACE, "{"));
-				case ch == '}':
-					l.flushInt();
-					l.flushStr();
-					l.tokens = append(l.tokens, *token.NewToken(token.RBRACE, "}"));
-				case unicode.IsLetter(ch):
-					l.flushInt()
-					l.currString = append(l.currString, ch)
-				case '0' <= ch && ch <= '9':
-					l.flushStr()
-					l.currNum = append(l.currNum, ch)
-				default:
-					l.flushInt()
-					l.flushStr()
-					l.tokens = append(l.tokens, *token.NewToken(token.ILLEGAL, string(ch)))
-				}
-				
-				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.MULTIPLY, "*"))
 			}
-			
+		case ch == '/':
 			l.flushInt()
 			l.flushStr()
-			
-			return l.tokens
+			if l.peek(1) == '=' {
+				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_DIVIDE, "/="))
+				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.DIVIDE, "/"))
+			}
+		case ch == '=':
+			l.flushInt()
+			l.flushStr()
+			if l.peek(1) == '=' {
+				l.tokens = append(l.tokens, *token.NewToken(token.EQUALS, "=="))
+				l.eat()
+			} else {
+
+				l.tokens = append(l.tokens, *token.NewToken(token.ASSIGN, "="))
+			}
+		case ch == '>':
+			l.flushInt()
+			l.flushStr()
+			if l.peek(1) == '=' {
+				l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN_EQT, ">="))
+				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN, ">"))
+			}
+		case ch == '<':
+			l.flushInt()
+			l.flushStr()
+			if l.peek(1) == '=' {
+				l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN_EQT, "<="))
+				l.eat()
+			} else {
+				l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN, "<"))
+			}
+		case ch == '&' && l.peek(1) == '&':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.AND, "&&"))
+			l.eat()
+		case ch == '|' && l.peek(1) == '|':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.OR, "||"))
+			l.eat()
+		case ch == '!':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"))
+		case ch == '{':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.LBRACE, "{"))
+		case ch == '}':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.RBRACE, "}"))
+		case unicode.IsLetter(ch):
+			l.flushInt()
+			l.currString = append(l.currString, ch)
+		case '0' <= ch && ch <= '9':
+			l.flushStr()
+			l.currNum = append(l.currNum, ch)
+		default:
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.ILLEGAL, string(ch)))
 		}
+
+		l.eat()
+	}
+
+	l.flushInt()
+	l.flushStr()
+
+	return l.tokens
+}

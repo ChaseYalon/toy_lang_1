@@ -14,8 +14,9 @@ Roadmap:
     e. Variable scopes
     f. Else
     g. Elif
-4. Functions
-5. Builtin functions
-6. Floating points
-7. User defined data types (structs/classes)
-8. Macros
+4. Parens
+5. Functions
+6. Builtin functions
+7. Floating points
+8. User defined data types (structs/classes)
+9. Macros

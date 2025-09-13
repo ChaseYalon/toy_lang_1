@@ -70,7 +70,6 @@ func TestPreParser(t *testing.T) {
 		input  string
 		output []token.Token
 	}{
-		// ✅ Simple case - already passes
 		{
 			input: "let x = 5; x+=1;",
 			output: []token.Token{
@@ -88,7 +87,6 @@ func TestPreParser(t *testing.T) {
 			},
 		},
 
-		// 🔥 Fail case: compound with another variable
 		{
 			input: "let a = 2; let b = 3; a+=b;",
 			output: []token.Token{
@@ -333,9 +331,9 @@ func TestParser(t *testing.T) {
 					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.BoolInfixNode{
-							Left: &ast.IntLiteralNode{Value: 5},
+							Left:     &ast.IntLiteralNode{Value: 5},
 							Operator: token.LESS_THAN,
-							Right: &ast.IntLiteralNode{Value: 6},
+							Right:    &ast.IntLiteralNode{Value: 6},
 						},
 					},
 				},
@@ -348,9 +346,9 @@ func TestParser(t *testing.T) {
 					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.BoolInfixNode{
-							Left: &ast.IntLiteralNode{Value: 5},
+							Left:     &ast.IntLiteralNode{Value: 5},
 							Operator: token.GREATER_THAN_EQT,
-							Right: &ast.IntLiteralNode{Value: 6},
+							Right:    &ast.IntLiteralNode{Value: 6},
 						},
 					},
 					&ast.LetStmtNode{
@@ -358,15 +356,117 @@ func TestParser(t *testing.T) {
 						Value: &ast.BoolInfixNode{
 							Left: &ast.PrefixExprNode{
 								Operator: token.NOT,
-								Value: &ast.ReferenceExprNode{Name: "x"},
+								Value:    &ast.ReferenceExprNode{Name: "x"},
 							},
 							Operator: token.OR,
-							Right: &ast.BoolLiteralNode{Value: true},
+							Right:    &ast.BoolLiteralNode{Value: true},
 						},
 					},
 				},
 			},
 		},
+		{
+			input: "if true{let y = 4;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "y",
+								Value: &ast.IntLiteralNode{Value: 4},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let y = 4; if y < 9{let z = 5;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "y",
+						Value: &ast.IntLiteralNode{Value: 4},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.ReferenceExprNode{Name: "y"},
+							Operator: token.LESS_THAN,
+							Right: &ast.IntLiteralNode{Value: 9},
+						},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name: "z",
+								Value: &ast.IntLiteralNode{Value: 5},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let x = 1; if true { if false { x += 5; } }",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.IntLiteralNode{
+							Value: 1,
+						},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.IfStmtNode{
+								Cond: &ast.BoolLiteralNode{Value: false},
+								Body: []ast.Node{
+									&ast.VarReassignNode{
+										Var: ast.ReferenceExprNode{Name: "x"},
+										NewVal: &ast.InfixExprNode{
+											Left: &ast.ReferenceExprNode{Name: "x"},
+											Operator: token.PLUS,
+											Right: &ast.IntLiteralNode{Value: 5},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let x = false; if !x&&true{let y = !x;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.BoolLiteralNode{Value: false},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.PrefixExprNode{
+								Operator: token.NOT,
+								Value: &ast.ReferenceExprNode{Name: "x"},
+							},
+							Operator: token.AND,
+							Right: &ast.BoolLiteralNode{Value: true},
+						},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name: "y",
+								Value: &ast.PrefixExprNode{
+									Operator: token.NOT,
+									Value: &ast.ReferenceExprNode{Name: "x"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
 	}
 
 	for _, tt := range tests {

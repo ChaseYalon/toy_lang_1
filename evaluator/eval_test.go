@@ -6,6 +6,7 @@ import (
 	"toy_lang/lexer"
 	"toy_lang/parser"
 )
+
 func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node) {
 	if len(got) != len(want) {
 		t.Errorf("[FAIL] Wanted %d variables, Got %d variables", len(want), len(got))
@@ -22,7 +23,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 	}
 }
 
-func TestEvaluator(t *testing.T){
+func TestEvaluator(t *testing.T) {
 	tests := []struct {
 		input  string
 		output v_map
@@ -66,7 +67,7 @@ func TestEvaluator(t *testing.T){
 			output: map[string]ast.Node{
 				"x": &ast.BoolLiteralNode{Value: true},
 				"y": &ast.BoolLiteralNode{Value: false},
-			},	
+			},
 		},
 		{
 			input: "let x = true; let y = !!x && true",
@@ -75,11 +76,37 @@ func TestEvaluator(t *testing.T){
 				"y": &ast.BoolLiteralNode{Value: true},
 			},
 		},
+		{
+			input: "if true{let y = 4;}",
+			output: map[string]ast.Node{
+				"y": &ast.IntLiteralNode{Value: 4},
+			},
+		},
+		{
+			input: "let x = 5; if 5 < 6{let y = true;}",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 5},
+				"y": &ast.BoolLiteralNode{Value: true},
+			},
+		},
+		{
+			input: "let y = false; if y && true{let x = 5;}",
+			output: map[string]ast.Node{
+				"y": &ast.BoolLiteralNode{Value: false},
+			},
+		},
+		{
+			input: "let x = false; if !x&&true{let y = !x;}",
+			output: map[string]ast.Node{
+				"x": &ast.BoolLiteralNode{Value: false},
+				"y": &ast.BoolLiteralNode{Value: true},
+			},
+		},
 	}
 	for _, tt := range tests {
-		lex := lexer.NewLexer();
-		parse := parser.NewParser();
-		exec := NewInterpreter();
-		compareVMap(t, exec.Execute(parse.Parse(lex.Lex(tt.input)), false), tt.output);
+		lex := lexer.NewLexer()
+		parse := parser.NewParser()
+		exec := NewInterpreter()
+		compareVMap(t, exec.Execute(parse.Parse(lex.Lex(tt.input)), false), tt.output)
 	}
 }
