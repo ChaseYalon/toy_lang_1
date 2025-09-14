@@ -123,7 +123,7 @@ func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 		} else if n.Value.NodeType() == ast.BoolInfix {
 			i.vars[n.Name] = &ast.BoolLiteralNode{Value: i.execBoolExpr(n.Value)}
 			return nil
-		} else if n.Value.NodeType() == ast.PrefixExpr{
+		} else if n.Value.NodeType() == ast.PrefixExpr {
 			i.vars[n.Name] = &ast.BoolLiteralNode{Value: i.execBoolExpr(n.Value)}
 			return nil
 		} else {
@@ -149,6 +149,11 @@ func (i *Interpreter) executeStmt(stmt ast.Node) ast.Node {
 		if bool_cond {
 			for _, val := range n.Body {
 				i.executeStmt(val)
+			}
+		}
+		if len(n.Alt) != 0 && !bool_cond{
+			for _, val := range n.Body{
+				i.executeStmt(val);
 			}
 		}
 		return nil

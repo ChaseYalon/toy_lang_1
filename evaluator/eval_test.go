@@ -102,6 +102,24 @@ func TestEvaluator(t *testing.T) {
 				"y": &ast.BoolLiteralNode{Value: true},
 			},
 		},
+		{
+			input: "if true {let y = 4;} else {let y = 5;}",
+			output: map[string]ast.Node{
+				"y": &ast.IntLiteralNode{Value: 4},
+			},
+		},
+		{
+			input: "let y = 9; if y < 10{y = 8;} else {y = 11;}",
+			output: map[string]ast.Node{
+				"y": &ast.IntLiteralNode{Value: 8},
+			},
+		},
+		{
+			input: "let v = true || false; if v{v = false;} else {v = true;}",
+			output: map[string]ast.Node{
+				"v": &ast.BoolLiteralNode{Value: false},
+			},
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

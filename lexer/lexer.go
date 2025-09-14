@@ -110,6 +110,13 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.pos += 2
 			continue
 		}
+		if ch == 'e' && l.peek(1) == 'l' && l.peek(2) == 's' && l.peek(3) == 'e' {
+			l.flushStr()
+			l.flushInt()
+			l.tokens = append(l.tokens, *token.NewToken(token.ELSE, "else"))
+			l.pos += 4
+			continue
+		}
 
 		if ch == ';' {
 			l.flushInt()

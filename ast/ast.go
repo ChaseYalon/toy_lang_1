@@ -108,6 +108,7 @@ func (n *ReferenceExprNode) NodeType() AstNode {
 func (n *ReferenceExprNode) String() string {
 	return fmt.Sprintf("REFERENCE(%v)", n.Name)
 }
+func (n *ReferenceExprNode)isBool(){}
 
 type VarReassignNode struct {
 	Var    ReferenceExprNode
@@ -140,7 +141,7 @@ func (n *ProgramNode) String() string {
 
 }
 
-//Bool literal
+// Bool literal
 type BoolLiteralNode struct {
 	Value bool
 }
@@ -155,7 +156,7 @@ func (n *BoolLiteralNode) String() string {
 	return "false"
 }
 
-//Annoying thing to make go work
+// Annoying thing to make go work
 func (n *BoolLiteralNode) isBool() {}
 
 type BoolInfixNode struct {
@@ -188,11 +189,25 @@ func (n *PrefixExprNode) isBool() {}
 type IfStmtNode struct {
 	Cond Bool
 	Body []Node
+	Alt  []Node
 }
 
 func (n *IfStmtNode) NodeType() AstNode {
 	return IfStmt
 }
 func (n *IfStmtNode) String() string {
-	return fmt.Sprintf("if %v{\n%+v\n}", n.Cond, n.Body)
+	var str string = fmt.Sprintf("if %v {\n", n.Cond)
+	for _, val := range n.Body {
+		str += fmt.Sprintf("\t%v\n", val)
+	}
+	str += "}"
+	if len(n.Alt) == 0 {
+		return str
+	}
+	str += " else {\n"
+	for _, val := range n.Alt {
+		str += fmt.Sprintf("\t%v\n", val)
+	}
+	str += "}"
+	return str
 }

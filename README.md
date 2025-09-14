@@ -10,10 +10,10 @@ Roadmap:
     a. Bool literals --Done
     b. Bool Operations --Done
     c. Bool Expressions --Done
-    d. Conditional Execution
-    e. Variable scopes
-    f. Else
-    g. Elif
+    d. Conditional Execution --Done
+    e. Else
+    f. Elif
+    g. Variable scopes
 4. Parens
 5. Functions
 6. Builtin functions

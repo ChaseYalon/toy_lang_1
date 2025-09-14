@@ -23,7 +23,7 @@ const (
 	VAR_NAME
 	LET
 	IF
-
+	ELSE
 	//Compound operators
 	COMPOUND_PLUS
 	COMPOUND_MINUS
@@ -107,6 +107,8 @@ func (t TokenType) String() string {
 		return "{"
 	case RBRACE:
 		return "}"
+	case ELSE:
+		return "ELSE"
 	default:
 		return "UNKNOWN"
 	}

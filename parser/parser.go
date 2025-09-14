@@ -23,20 +23,20 @@ func NewParser() *Parser {
 
 func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 	return map[token.TokenType]int{
-		token.PLUS:               1,
-		token.MINUS:              1,
-		token.MULTIPLY:           2,
-		token.DIVIDE:             2,
-		token.BOOLEAN:            100,
-		token.INTEGER:            100, // Boolean, int, and var ref should never be "bound to"
-		token.VAR_REF:            100,
-		token.AND:                3,
-		token.OR:                 3,
-		token.NOT:                4, // Logical operators have lower precedence than arithmetic, not is lowest
-		token.LESS_THAN:          3,
-		token.LESS_THAN_EQT:      3,
-		token.GREATER_THAN:       3,
-		token.GREATER_THAN_EQT:   3,
+		token.PLUS:             1,
+		token.MINUS:            1,
+		token.MULTIPLY:         2,
+		token.DIVIDE:           2,
+		token.BOOLEAN:          100,
+		token.INTEGER:          100, // Boolean, int, and var ref should never be "bound to"
+		token.VAR_REF:          100,
+		token.AND:              3,
+		token.OR:               3,
+		token.NOT:              4, // Logical operators have lower precedence than arithmetic, not is lowest
+		token.LESS_THAN:        3,
+		token.LESS_THAN_EQT:    3,
+		token.GREATER_THAN:     3,
+		token.GREATER_THAN_EQT: 3,
 	}
 }
 
@@ -213,6 +213,31 @@ func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
 	}
 }
 
+
+func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
+	if tok.TokType != token.VAR_REF {
+		panic(fmt.Sprintf("[ERROR] Expected name of variable, got %v\n", tok))
+	}
+	return &ast.ReferenceExprNode{
+		Name: tok.Literal,
+	}
+}
+
+func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
+	// Sematic checks
+	if toks[0].TokType != token.VAR_REF {
+		panic(fmt.Sprintf("[ERROR] Expected var name, got %v\n", toks[0]))
+	}
+	if toks[1].TokType != token.ASSIGN {
+		panic(fmt.Sprintf("[ERROR] Expected equals sign, got %v\n", toks[0]))
+	}
+	name := p.parseVarReference(toks[0])
+	value := p.parseExpression(toks[2:])
+	return &ast.VarReassignNode{
+		Var:    *name,
+		NewVal: value,
+	}
+}
 func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 	// Do sematic analysis
 	if toks[0].TokType != token.IF {
@@ -259,32 +284,58 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 			Body: parsedStmts,
 		}
 	}
+	if cond.NodeType() == ast.ReferenceExpr{
+		refExpr, ok := cond.(*ast.ReferenceExprNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond));
+		}
+		return &ast.IfStmtNode{
+			Cond: &ast.BoolInfixNode{
+				Left: refExpr,
+				Operator: token.OR,
+				Right: &ast.BoolLiteralNode{Value: false},
+			},
+			Body: parsedStmts,
+		}
+	}
+
 	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
 }
-
-func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
-	if tok.TokType != token.VAR_REF {
-		panic(fmt.Sprintf("[ERROR] Expected name of variable, got %v\n", tok))
-	}
-	return &ast.ReferenceExprNode{
-		Name: tok.Literal,
-	}
-}
-
-func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
-	// Sematic checks
-	if toks[0].TokType != token.VAR_REF {
-		panic(fmt.Sprintf("[ERROR] Expected var name, got %v\n", toks[0]))
-	}
-	if toks[1].TokType != token.ASSIGN {
-		panic(fmt.Sprintf("[ERROR] Expected equals sign, got %v\n", toks[0]))
-	}
-	name := p.parseVarReference(toks[0])
-	value := p.parseExpression(toks[2:])
-	return &ast.VarReassignNode{
-		Var:    *name,
-		NewVal: value,
-	}
+func (p *Parser) parseElseStmt(toks []token.Token) {
+    // Semantic checks
+    if toks[0].TokType != token.ELSE {
+        panic(fmt.Sprintf("[ERROR] Expected else, got %v\n", toks[0]))
+    }
+    
+    // Extract the body between braces (skip ELSE and LBRACE, exclude RBRACE)
+    bodyTokens := toks[2:]
+    
+    body := p.splitIntoLines(bodyTokens)
+    
+    var stmts []ast.Node
+    for i, val := range body {
+        if len(val) > 0 { // Only parse non-empty token slices
+            stmt := p.parseStmt(val)
+            if stmt != nil {
+                stmts = append(stmts, stmt)
+            }
+        } else {
+            fmt.Printf("Skipping empty slice at index %d\n", i) // Debug line
+        }
+    }
+    
+    // Find the last if statement to attach this else to
+    if len(p.program.Statements) == 0 || p.program.Statements[len(p.program.Statements)-1].NodeType() != ast.IfStmt {
+        panic("[ERROR] Could not find if to attach else to")
+    }
+    
+    lastIf, ok := p.program.Statements[len(p.program.Statements)-1].(*ast.IfStmtNode)
+    if !ok {
+        panic("[ERROR] Could not find if to attach else to")
+    }
+    
+    lastIf.Alt = stmts
+    p.program.Statements[len(p.program.Statements)-1] = lastIf
 }
 
 func (p *Parser) parseStmt(line []token.Token) ast.Node {
@@ -317,6 +368,10 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 	}
 	if firstTok.TokType == token.IF {
 		return p.parseIfStmt(line)
+	}
+	if firstTok.TokType == token.ELSE{
+		p.parseElseStmt(line);
+		return nil;
 	}
 	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)

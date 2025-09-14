@@ -386,18 +386,18 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "y",
+						Name:  "y",
 						Value: &ast.IntLiteralNode{Value: 4},
 					},
 					&ast.IfStmtNode{
 						Cond: &ast.BoolInfixNode{
-							Left: &ast.ReferenceExprNode{Name: "y"},
+							Left:     &ast.ReferenceExprNode{Name: "y"},
 							Operator: token.LESS_THAN,
-							Right: &ast.IntLiteralNode{Value: 9},
+							Right:    &ast.IntLiteralNode{Value: 9},
 						},
 						Body: []ast.Node{
 							&ast.LetStmtNode{
-								Name: "z",
+								Name:  "z",
 								Value: &ast.IntLiteralNode{Value: 5},
 							},
 						},
@@ -424,9 +424,9 @@ func TestParser(t *testing.T) {
 									&ast.VarReassignNode{
 										Var: ast.ReferenceExprNode{Name: "x"},
 										NewVal: &ast.InfixExprNode{
-											Left: &ast.ReferenceExprNode{Name: "x"},
+											Left:     &ast.ReferenceExprNode{Name: "x"},
 											Operator: token.PLUS,
-											Right: &ast.IntLiteralNode{Value: 5},
+											Right:    &ast.IntLiteralNode{Value: 5},
 										},
 									},
 								},
@@ -441,24 +441,24 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "x",
+						Name:  "x",
 						Value: &ast.BoolLiteralNode{Value: false},
 					},
 					&ast.IfStmtNode{
 						Cond: &ast.BoolInfixNode{
 							Left: &ast.PrefixExprNode{
 								Operator: token.NOT,
-								Value: &ast.ReferenceExprNode{Name: "x"},
+								Value:    &ast.ReferenceExprNode{Name: "x"},
 							},
 							Operator: token.AND,
-							Right: &ast.BoolLiteralNode{Value: true},
+							Right:    &ast.BoolLiteralNode{Value: true},
 						},
 						Body: []ast.Node{
 							&ast.LetStmtNode{
 								Name: "y",
 								Value: &ast.PrefixExprNode{
 									Operator: token.NOT,
-									Value: &ast.ReferenceExprNode{Name: "x"},
+									Value:    &ast.ReferenceExprNode{Name: "x"},
 								},
 							},
 						},
@@ -466,7 +466,96 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			input: "let x = 9; if x < 10{let y = 4;} else {let y = 5;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.IntLiteralNode{Value: 9},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left:     &ast.ReferenceExprNode{Name: "x"},
+							Operator: token.LESS_THAN,
+							Right:    &ast.IntLiteralNode{Value: 10},
+						},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "y",
+								Value: &ast.IntLiteralNode{Value: 4},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "y",
+								Value: &ast.IntLiteralNode{Value: 5},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "if true { let x = 1; } else { let x = 3 >= 4; }",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "x",
+								Value: &ast.IntLiteralNode{Value: 1},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.LetStmtNode{
+								Name: "x",
+								Value: &ast.BoolInfixNode{
+									Left: &ast.IntLiteralNode{Value: 3},
+									Operator: token.GREATER_THAN_EQT,
+									Right: &ast.IntLiteralNode{Value: 4},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let v = true || false; if v{v = false;} else {v = true;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "v",
+						Value: &ast.BoolInfixNode{
+							Left: &ast.BoolLiteralNode{Value: true},
+							Operator: token.OR,
+							Right: &ast.BoolLiteralNode{Value: false},
+						},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.ReferenceExprNode{Name: "v"},
+							Operator: token.OR,
+							Right: &ast.BoolLiteralNode{Value: false},
+						},
+						Body: []ast.Node{
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "v"},
+								NewVal: &ast.BoolLiteralNode{Value: false},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "v"},
+								NewVal: &ast.BoolLiteralNode{Value: true},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
