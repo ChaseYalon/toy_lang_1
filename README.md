@@ -11,10 +11,9 @@ Roadmap:
     b. Bool Operations --Done
     c. Bool Expressions --Done
     d. Conditional Execution --Done
-    e. Else
-    f. Elif
+    e. Else --Done
     g. Variable scopes
-4. Parens
+4. Parens && Nested blocks
 5. Functions
 6. Builtin functions
 7. Floating points

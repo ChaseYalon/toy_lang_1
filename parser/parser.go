@@ -12,6 +12,7 @@ type Parser struct {
 	tokens  []token.Token
 }
 
+
 func NewParser() *Parser {
 	return &Parser{
 		program: ast.ProgramNode{
