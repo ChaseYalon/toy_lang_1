@@ -650,6 +650,30 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: "if true{if !false{let y = 4;}}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.IfStmtNode{
+								Cond: &ast.PrefixExprNode{
+									Operator: token.NOT,
+									Value: &ast.BoolLiteralNode{Value: false},
+								},
+								Body: []ast.Node{
+									&ast.LetStmtNode{
+										Name: "y",
+										Value: &ast.IntLiteralNode{Value: 4},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
