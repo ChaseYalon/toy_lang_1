@@ -118,6 +118,12 @@ func TestEvaluator(t *testing.T) {
 				"v": &ast.BoolLiteralNode{Value: false},
 			},
 		},
+		{
+			input: "let x = 4 * (4 + 2);",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 24},
+			},
+		},
 	}
 
 	for _, tt := range tests {

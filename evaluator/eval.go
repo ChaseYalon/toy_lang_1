@@ -24,7 +24,6 @@ type Scope struct {
 
 // Look up a variable recursively
 func (s *Scope) getVar(name string) (ast.Node, bool) {
-	fmt.Printf("Get Var called on scope %v, name: %v\n", s, name);
 	if val, ok := s.Vars[name]; ok {
 		return val, true
 	}
@@ -39,7 +38,7 @@ func (s *Scope) declareVar(name string, val ast.Node) {
 }
 
 func (s *Scope) assignVar(name string, val ast.Node) bool {
-	if val.NodeType() == ast.IntLiteral || val.NodeType() == ast.BoolLiteral{
+	if val.NodeType() == ast.IntLiteral || val.NodeType() == ast.BoolLiteral {
 		if _, ok := s.Vars[name]; ok {
 			s.Vars[name] = val
 			return true
@@ -59,9 +58,10 @@ func (s *Scope) newChild() *Scope {
 	}
 }
 
-func (s *Scope) String() string{
-	return fmt.Sprintf("Vars: %+v, Parent: %v\n", s.Vars, s.Parent);
+func (s *Scope) String() string {
+	return fmt.Sprintf("Vars: %+v, Parent: %v\n", s.Vars, s.Parent)
 }
+
 type Interpreter struct {
 	MainScope Scope
 }
@@ -74,7 +74,14 @@ func NewInterpreter() Interpreter {
 	}
 }
 
-func (i *Interpreter) execIntExpr(node ast.Node, local_scope *Scope) int {
+func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
+	var node ast.Node = inode
+	
+	// Handle EmptyExprNode by unwrapping it
+	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
+		node = emptyNode.Child
+	}
+	
 	switch node := node.(type) {
 	case *ast.IntLiteralNode:
 		return node.Value
@@ -103,7 +110,14 @@ func (i *Interpreter) execIntExpr(node ast.Node, local_scope *Scope) int {
 	panic(fmt.Sprintf("[ERROR] Unknown int expression: %v", node))
 }
 
-func (i *Interpreter) execBoolExpr(node ast.Node, local_scope *Scope) bool {
+func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
+	var node ast.Node = inode
+	
+	// Handle EmptyExprNode by unwrapping it
+	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
+		node = emptyNode.Child
+	}
+	
 	switch node := node.(type) {
 	case *ast.BoolLiteralNode:
 		return node.Value
@@ -139,7 +153,6 @@ func (i *Interpreter) execBoolExpr(node ast.Node, local_scope *Scope) bool {
 }
 
 func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scope, isDeclaration bool) {
-	fmt.Printf("Assigning variable, name: %v, value: %v, isDeclaration: %v\n", name, value, isDeclaration)
 
 	var valNode ast.Node
 
@@ -149,13 +162,11 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
 	case *ast.ReferenceExprNode:
-		fmt.Printf("In assign var, ref expr node, got %v\n", value);
 		// Look up the referenced variable
 		refVal, ok := local_scope.getVar(v.Name)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Undefined variable %s of type %v\n", v.Name, v.NodeType()))
 		}
-		fmt.Printf("After fetch, val node is\n")
 		// Evaluate based on the actual type of the referenced node
 		switch refVal := refVal.(type) {
 		case *ast.IntLiteralNode, *ast.InfixExprNode:
@@ -165,14 +176,13 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}
-	
+
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v\n", value))
 	}
-	if valNode == nil{
-		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name));
+	if valNode == nil {
+		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
 	} else {
-		fmt.Printf("val node: %v\n", valNode)
 	}
 	if isDeclaration {
 		local_scope.declareVar(name, valNode)
@@ -184,24 +194,22 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 }
 
 func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
-	fmt.Printf("In var val with value %v, of type %v in scope %v\n", node, node.NodeType(), local_scope);
-    switch n := node.(type) {
-    case *ast.LetStmtNode:
-        i.assignValue(n.Name, n.Value, local_scope, true)
-    case *ast.VarReassignNode:
-        varName := n.Var.Name  
-        i.assignValue(varName, n.NewVal, local_scope, false)
-    default:
-        panic(fmt.Sprintf("[ERROR] Unsupported node type: %T", node))
-    }
+	switch n := node.(type) {
+	case *ast.LetStmtNode:
+		i.assignValue(n.Name, n.Value, local_scope, true)
+	case *ast.VarReassignNode:
+		varName := n.Var.Name
+		i.assignValue(varName, n.NewVal, local_scope, false)
+	default:
+		panic(fmt.Sprintf("[ERROR] Unsupported node type: %T", node))
+	}
 }
 func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
 	ifStmt := node.(*ast.IfStmtNode)
 	cond := i.execBoolExpr(ifStmt.Cond, local_scope)
 	newScope := local_scope.newChild()
-	fmt.Printf("new scope: %v\n", newScope);
 	if cond {
-		fmt.Println("Processing body");
+		fmt.Println("Processing body")
 		for _, stmt := range ifStmt.Body {
 			i.executeStmt(stmt, newScope)
 		}
@@ -211,7 +219,6 @@ func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
 			i.executeStmt(stmt, newScope)
 		}
 	}
-	fmt.Printf("Done executing if statement\n")
 }
 
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
@@ -221,7 +228,6 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	case ast.BoolLiteral, ast.BoolInfix, ast.PrefixExpr:
 		i.execBoolExpr(node, local_scope)
 	case ast.LetStmt, ast.VarReassign:
-		fmt.Printf("Calling var val with: %v, scope: %v\n", node, local_scope)
 		i.changeVarVal(node, local_scope)
 	case ast.IfStmt:
 		i.execIfStmt(node, local_scope)
@@ -231,12 +237,11 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 }
 
 func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope {
-	fmt.Printf("Program: %++v\n", program);
 	for _, stmt := range program.Statements {
 		i.executeStmt(stmt, &i.MainScope)
 	}
 	if should_print {
-		fmt.Printf("%+v\n", i.MainScope.Vars)
+		fmt.Printf("%v\n", i.MainScope);
 	}
 	return i.MainScope
 }

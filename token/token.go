@@ -17,6 +17,8 @@ const (
 	ASSIGN
 	LBRACE
 	RBRACE
+	LPAREN
+	RPAREN
 
 	//Keywords
 	VAR_REF
@@ -45,6 +47,9 @@ const (
 	AND
 	OR
 	NOT
+
+	//Placeholder
+	EMPTY
 )
 
 func (t TokenType) String() string {
@@ -109,6 +114,12 @@ func (t TokenType) String() string {
 		return "}"
 	case ELSE:
 		return "ELSE"
+	case LPAREN:
+		return "("
+	case RPAREN:
+		return ")"
+	case EMPTY:
+		return "EMPTY"
 	default:
 		return "UNKNOWN"
 	}

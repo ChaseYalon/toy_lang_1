@@ -218,6 +218,14 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.flushInt()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.RBRACE, "}"))
+		case ch == '(':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.LPAREN, "("))
+		case ch == ')':
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.RPAREN, ")"))
 		case unicode.IsLetter(ch):
 			l.flushInt()
 			l.currString = append(l.currString, ch)

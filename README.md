@@ -12,8 +12,12 @@ Roadmap:
     c. Bool Expressions --Done
     d. Conditional Execution --Done
     e. Else --Done
-    g. Variable scopes
-4. Parens && Nested blocks && negative operator
+    g. Variable scopes --Done
+4. Misc
+    a. Parens
+    b. Nested Blocks and Parens
+    c. Elsif
+    d. Negative Operator
 5. Functions
 6. Builtin functions
 7. Floating points

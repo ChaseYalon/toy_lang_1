@@ -47,6 +47,7 @@ func compareTokens(t *testing.T, got, want []token.Token) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i] != want[i] {
+
 			t.Errorf("Mismatch at index %d: got %+v, want %+v", i, got[i], want[i])
 		}
 	}
@@ -585,28 +586,28 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "x",
+						Name:  "x",
 						Value: &ast.IntLiteralNode{Value: 0},
 					},
 					&ast.IfStmtNode{
 						Cond: &ast.BoolLiteralNode{Value: true},
 						Body: []ast.Node{
 							&ast.LetStmtNode{
-								Name: "y",
+								Name:  "y",
 								Value: &ast.IntLiteralNode{Value: 4},
 							},
 							&ast.VarReassignNode{
-								Var: ast.ReferenceExprNode{Name: "x"},
+								Var:    ast.ReferenceExprNode{Name: "x"},
 								NewVal: &ast.ReferenceExprNode{Name: "y"},
 							},
 						},
 						Alt: []ast.Node{
 							&ast.LetStmtNode{
-								Name: "y",
+								Name:  "y",
 								Value: &ast.IntLiteralNode{Value: 5},
 							},
 							&ast.VarReassignNode{
-								Var: ast.ReferenceExprNode{Name: "x"},
+								Var:    ast.ReferenceExprNode{Name: "x"},
 								NewVal: &ast.ReferenceExprNode{Name: "y"},
 							},
 						},
@@ -614,7 +615,41 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			input: "let x = 4 * (8 + 3); let x = 9 / (x + 1);",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.IntLiteralNode{Value: 4},
+							Operator: token.MULTIPLY,
+							Right: &ast.EmptyExprNode{
+								Child: &ast.InfixExprNode{
+									Left:     &ast.IntLiteralNode{Value: 8},
+									Operator: token.PLUS,
+									Right:    &ast.IntLiteralNode{Value: 3},
+								},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.IntLiteralNode{Value: 9},
+							Operator: token.DIVIDE,
+							Right: &ast.EmptyExprNode{
+								Child: &ast.InfixExprNode{
+									Left:     &ast.ReferenceExprNode{Name: "x"},
+									Operator: token.PLUS,
+									Right:    &ast.IntLiteralNode{Value: 1},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

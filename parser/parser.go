@@ -127,66 +127,182 @@ func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
 		lines = append(lines, current)
 	}
 
-	fmt.Printf("To return: %++v\n", lines)
 	return lines
 }
 
-
 func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {
-	// Functional infinity to start
-	var lowestVal int = 10000000
-	var lowestToken token.Token
-	var lowestIndex int = -1
+	lowestVal := 10000000
+	var lowestTok token.Token
+	lowestIndex := -1
+	depth := 0
+
 	for i, tok := range tokens {
-		localVal := pt[tok.TokType]
-		if localVal < lowestVal {
-			lowestVal = localVal
-			lowestToken = tok
-			lowestIndex = i
+		switch tok.TokType {
+		case token.LPAREN:
+			depth++
+		case token.RPAREN:
+			depth--
+		default:
+			if depth == 0 {
+				if val, ok := pt[tok.TokType]; ok && val < lowestVal {
+					lowestVal = val
+					lowestTok = tok
+					lowestIndex = i
+				}
+			}
 		}
 	}
-	return lowestToken, lowestIndex
+	return lowestTok, lowestIndex
 }
 
 func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
+	if len(tokens) == 0 {
+		panic("[ERROR] Empty expression")
+	}
+
+	var newTokens []token.Token
+	var subNodes []*ast.EmptyExprNode // track nodes corresponding to EMPTY tokens
+
+	i := 0
+	for i < len(tokens) {
+		tok := tokens[i]
+
+		if tok.TokType == token.LPAREN {
+			// Find matching RPAREN
+			depth := 1
+			j := i + 1
+			for j < len(tokens) && depth > 0 {
+				if tokens[j].TokType == token.LPAREN {
+					depth++
+				} else if tokens[j].TokType == token.RPAREN {
+					depth--
+				}
+				j++
+			}
+			if depth != 0 {
+				panic("[ERROR] Mismatched parentheses")
+			}
+
+			// Recursively parse the parenthetical group
+			sub := p.parseExpression(tokens[i+1 : j-1])
+			emptyNode := &ast.EmptyExprNode{Child: sub}
+
+			// Add placeholder token to newTokens
+			newTokens = append(newTokens, *token.NewToken(token.EMPTY, ""))
+
+			// Track the corresponding node
+			subNodes = append(subNodes, emptyNode)
+
+			i = j
+		} else {
+			newTokens = append(newTokens, tok)
+			i++
+		}
+	}
+
+	return p.parseSubExpression(newTokens, subNodes)
+}
+
+func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyExprNode) ast.Node {
+	if len(tokens) == 0 {
+		panic("[ERROR] Empty expression")
+	}
+
+	// If single token, return appropriate node (IMPORTANT: return EmptyExprNode itself, not its child)
+	if len(tokens) == 1 {
+		tok := tokens[0]
+		switch tok.TokType {
+		case token.INTEGER:
+			val, _ := strconv.Atoi(tok.Literal)
+			return &ast.IntLiteralNode{Value: val}
+		case token.BOOLEAN:
+			val, _ := strconv.ParseBool(tok.Literal)
+			return &ast.BoolLiteralNode{Value: val}
+		case token.VAR_REF:
+			return &ast.ReferenceExprNode{Name: tok.Literal}
+		case token.EMPTY:
+			if len(subNodes) == 0 || subNodes[0] == nil {
+				panic("[ERROR] EMPTY token without corresponding subnode")
+			}
+			// Return the EmptyExprNode itself to preserve the parentheses level
+			return subNodes[0]
+		default:
+			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
+		}
+	}
+	
 	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
-	if lowestTok.TokType == token.INTEGER {
-		val, err := strconv.Atoi(lowestTok.Literal)
-		if err != nil {
-			panic(fmt.Sprintf("[ERROR] Could not convert from string to int literal, trying to convert %v", lowestTok))
-		}
-		return &ast.IntLiteralNode{Value: val}
-	}
-	if lowestTok.TokType == token.BOOLEAN {
-		val, err := strconv.ParseBool(lowestTok.Literal)
-		if err != nil {
-			panic(fmt.Sprintf("[ERROR] Could not convert from string to bool literal, trying to convert %v", lowestTok))
-		}
-		return &ast.BoolLiteralNode{Value: val}
-	}
-	if lowestTok.TokType == token.VAR_REF {
-		return &ast.ReferenceExprNode{Name: lowestTok.Literal}
-	}
 	if lowestIndex == -1 {
-		panic(fmt.Sprintf("[ERROR] Could not find lowest binding power operator, input was %+v\n", tokens))
+		// When no operator found, parse as single token but handle subNodes safely
+		var leftSubNodes []*ast.EmptyExprNode
+		if len(subNodes) > 0 {
+			leftSubNodes = subNodes[:1]
+		}
+		return p.parseSubExpression(tokens[:1], leftSubNodes)
 	}
+
+	// Helper function to safely slice subNodes based on token count
+	sliceSubNodes := func(start, end int) []*ast.EmptyExprNode {
+		if len(subNodes) == 0 {
+			return []*ast.EmptyExprNode{}
+		}
+		
+		// Count EMPTY tokens in the token range to determine subNodes slice
+		emptyCount := 0
+		for i := start; i < end && i < len(tokens); i++ {
+			if tokens[i].TokType == token.EMPTY {
+				emptyCount++
+			}
+		}
+		
+		if emptyCount == 0 {
+			return []*ast.EmptyExprNode{}
+		}
+		
+		// Find the starting position in subNodes
+		subNodesStart := 0
+		for i := 0; i < start && i < len(tokens); i++ {
+			if tokens[i].TokType == token.EMPTY {
+				subNodesStart++
+			}
+		}
+		
+		subNodesEnd := subNodesStart + emptyCount
+		if subNodesEnd > len(subNodes) {
+			subNodesEnd = len(subNodes)
+		}
+		
+		return subNodes[subNodesStart:subNodesEnd]
+	}
+
 	switch lowestTok.TokType {
-	case token.AND, token.OR, token.LESS_THAN, token.LESS_THAN_EQT, token.GREATER_THAN, token.GREATER_THAN_EQT:
-		left := p.parseExpression(tokens[:lowestIndex])
-		right := p.parseExpression(tokens[lowestIndex+1:])
+	case token.AND, token.OR, token.LESS_THAN, token.LESS_THAN_EQT,
+		token.GREATER_THAN, token.GREATER_THAN_EQT:
+		leftSubNodes := sliceSubNodes(0, lowestIndex)
+		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
+		
+		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
+		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
 		return &ast.BoolInfixNode{
 			Left:     left,
 			Operator: lowestTok.TokType,
 			Right:    right,
 		}
 	case token.NOT:
+		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
+		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
+		// NOT is prefix; right already parsed
 		return &ast.PrefixExprNode{
-			Value:    p.parseExpression(tokens[lowestIndex+1:]),
+			Value:    right,
 			Operator: token.NOT,
 		}
 	default:
-		left := p.parseExpression(tokens[:lowestIndex])
-		right := p.parseExpression(tokens[lowestIndex+1:])
+		leftSubNodes := sliceSubNodes(0, lowestIndex)
+		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
+		
+		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
+		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
+		// Arithmetic / generic infix
 		return &ast.InfixExprNode{
 			Left:     left,
 			Operator: lowestTok.TokType,
@@ -313,14 +429,13 @@ func (p *Parser) parseElseStmt(toks []token.Token) {
 	body := p.splitIntoLines(bodyTokens)
 
 	var stmts []ast.Node
-	for i, val := range body {
+	for _, val := range body {
 		if len(val) > 0 { // Only parse non-empty token slices
 			stmt := p.parseStmt(val)
 			if stmt != nil {
 				stmts = append(stmts, stmt)
 			}
 		} else {
-			fmt.Printf("Skipping empty slice at index %d\n", i) // Debug line
 		}
 	}
 

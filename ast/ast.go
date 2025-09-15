@@ -28,6 +28,7 @@ const (
 	BoolInfix
 	PrefixExpr
 	IfStmt
+	EmptyExpr
 )
 
 func (n AstNode) String() string {
@@ -50,6 +51,8 @@ func (n AstNode) String() string {
 		return "IF_STMT"
 	case PrefixExpr:
 		return "PREFIX_EXPR"
+	case EmptyExpr:
+		return "EMPTY_EXPR" //Parens
 	default:
 		return "ILLEGAL"
 	}
@@ -210,4 +213,15 @@ func (n *IfStmtNode) String() string {
 	}
 	str += "}"
 	return str
+}
+
+type EmptyExprNode struct {
+	Child Node
+}
+
+func (n *EmptyExprNode) NodeType() AstNode {
+	return EmptyExpr
+}
+func (n *EmptyExprNode) String() string {
+	return fmt.Sprintf("(%v)", n.Child)
 }
