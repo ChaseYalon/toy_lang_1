@@ -124,6 +124,19 @@ func TestEvaluator(t *testing.T) {
 				"x": &ast.IntLiteralNode{Value: 24},
 			},
 		},
+		{
+			input: "let x = 4 * (4 + 2); let y = 9 / (x + 1);",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 24},
+				"y": &ast.IntLiteralNode{Value: 0},
+			},
+		},
+		{
+			input: "let x = 0;if true{if !false{let y = 4; x=y;}}",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 4},	
+			},
+		},
 	}
 
 	for _, tt := range tests {

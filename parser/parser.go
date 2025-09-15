@@ -414,6 +414,16 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 			Body: parsedStmts,
 		}
 	}
+	if cond.NodeType() == ast.PrefixExpr{
+		prefixExpr, ok := cond.(*ast.PrefixExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
+		}
+		return &ast.IfStmtNode{
+			Cond: prefixExpr,
+			Body: parsedStmts,
+		}
+	}
 
 	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
 }
