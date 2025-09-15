@@ -97,6 +97,13 @@ func (p *Parser) preProcess(tokens []token.Token) []token.Token {
 		}
 		toReturn = append(toReturn, val)
 	}
+	//Second pass replace let y = -5; with let y = 0 - 5;;
+	for i, val := range toReturn {
+		if val.TokType == token.MINUS && (toReturn[i-1].TokType != token.INTEGER || toReturn[i-1].TokType != token.RPAREN || toReturn[i-1].TokType != token.LPAREN) {
+			toReturn[i] = *token.NewToken(token.INTEGER, "0")
+			toReturn = append(toReturn[:i], append([]token.Token{*token.NewToken(token.MINUS, "-")}, toReturn[i:]...)...)
+		}
+	}
 	return toReturn
 }
 
@@ -230,7 +237,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
 		}
 	}
-	
+
 	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
 	if lowestIndex == -1 {
 		// When no operator found, parse as single token but handle subNodes safely
@@ -246,7 +253,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 		if len(subNodes) == 0 {
 			return []*ast.EmptyExprNode{}
 		}
-		
+
 		// Count EMPTY tokens in the token range to determine subNodes slice
 		emptyCount := 0
 		for i := start; i < end && i < len(tokens); i++ {
@@ -254,11 +261,11 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 				emptyCount++
 			}
 		}
-		
+
 		if emptyCount == 0 {
 			return []*ast.EmptyExprNode{}
 		}
-		
+
 		// Find the starting position in subNodes
 		subNodesStart := 0
 		for i := 0; i < start && i < len(tokens); i++ {
@@ -266,12 +273,12 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 				subNodesStart++
 			}
 		}
-		
+
 		subNodesEnd := subNodesStart + emptyCount
 		if subNodesEnd > len(subNodes) {
 			subNodesEnd = len(subNodes)
 		}
-		
+
 		return subNodes[subNodesStart:subNodesEnd]
 	}
 
@@ -280,7 +287,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 		token.GREATER_THAN, token.GREATER_THAN_EQT:
 		leftSubNodes := sliceSubNodes(0, lowestIndex)
 		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
-		
+
 		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
 		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
 		return &ast.BoolInfixNode{
@@ -299,7 +306,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 	default:
 		leftSubNodes := sliceSubNodes(0, lowestIndex)
 		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
-		
+
 		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
 		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
 		// Arithmetic / generic infix
@@ -414,7 +421,7 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 			Body: parsedStmts,
 		}
 	}
-	if cond.NodeType() == ast.PrefixExpr{
+	if cond.NodeType() == ast.PrefixExpr {
 		prefixExpr, ok := cond.(*ast.PrefixExprNode)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))

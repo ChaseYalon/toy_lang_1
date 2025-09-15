@@ -148,6 +148,35 @@ func TestPreParser(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
 		},
+		{
+			input: "let y = -4;",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "y"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.INTEGER, "0"),
+				*token.NewToken(token.MINUS, "-"),
+				*token.NewToken(token.INTEGER, "4"),
+			},
+		},
+		{
+			input: "let y = 5 + (-4 + 1);",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "y"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.INTEGER, "5"),
+				*token.NewToken(token.PLUS, "+"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.INTEGER, "0"),
+				*token.NewToken(token.MINUS, "-"),
+				*token.NewToken(token.INTEGER, "4"),
+				*token.NewToken(token.PLUS, "+"),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+		},
 	}
 
 	for _, tt := range tests {

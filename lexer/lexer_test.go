@@ -412,6 +412,17 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
+		{
+			input: "let x = -3;",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.MINUS, "-"),
+				*token.NewToken(token.INTEGER, "3"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

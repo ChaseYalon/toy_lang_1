@@ -15,12 +15,14 @@ Roadmap:
     g. Variable scopes --Done
 4. Misc
     a. Parens and Nested Parens -- Done
-    b. Nested Blocks
-    c. Elsif
-    d. Negative Operator
+    b. Nested Blocks --Done
+    c. Negative Operator
 5. Functions
 6. Builtin functions
 7. While loops
 8. Floating points
 9. User defined data types (structs/classes)
 10. Macros
+
+Notes:
+I have decided not to do elsif, can do it later but if()elsif()else() can just be if()else(if());
