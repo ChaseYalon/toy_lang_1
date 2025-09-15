@@ -99,10 +99,17 @@ func (p *Parser) preProcess(tokens []token.Token) []token.Token {
 	}
 	//Second pass replace let y = -5; with let y = 0 - 5;;
 	for i, val := range toReturn {
-		if val.TokType == token.MINUS && (toReturn[i-1].TokType == token.INTEGER || toReturn[i-1].TokType == token.RPAREN || toReturn[i-1].TokType == token.LPAREN) {
-			toReturn[i] = *token.NewToken(token.INTEGER, "0")
-			toReturn = append(toReturn[:i], append([]token.Token{*token.NewToken(token.MINUS, "-")}, toReturn[i:]...)...)
+		if val.TokType == token.MINUS &&
+			 i > 0 &&
+			 (toReturn[i-1].TokType != token.INTEGER &&
+				toReturn[i-1].TokType != token.RPAREN &&
+				toReturn[i-1].TokType != token.VAR_REF) {
+
+				// insert 0 before the minus
+				toReturn = append(toReturn[:i],
+						append([]token.Token{*token.NewToken(token.INTEGER, "0"), val}, toReturn[i+1:]...)...)
 		}
+
 	}
 	return toReturn
 }

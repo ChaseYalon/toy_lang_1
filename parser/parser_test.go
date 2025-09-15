@@ -157,6 +157,7 @@ func TestPreParser(t *testing.T) {
 				*token.NewToken(token.INTEGER, "0"),
 				*token.NewToken(token.MINUS, "-"),
 				*token.NewToken(token.INTEGER, "4"),
+				*token.NewToken(token.SEMICOLON, ";"),
 			},
 		},
 		{
