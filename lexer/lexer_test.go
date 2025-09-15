@@ -393,6 +393,25 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
+		{
+			input: "if true{if !false{let y = 5;}}",
+			output: []token.Token{
+				*token.NewToken(token.IF,"if"),
+				*token.NewToken(token.BOOLEAN, "true"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.IF, "if"),
+				*token.NewToken(token.NOT, "!"),
+				*token.NewToken(token.BOOLEAN, "false"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "y"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.INTEGER, "5"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

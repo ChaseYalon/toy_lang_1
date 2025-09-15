@@ -60,6 +60,18 @@ func (l *Lexer) flushStr() {
 func (l *Lexer) eat() {
 	l.pos++
 }
+func (l *Lexer) parseKeyword(word string, tok token.Token)bool{
+	for i, val := range []rune(word) {
+		if val != l.peek(i){
+			return false;
+		}
+	}
+	l.flushStr();
+	l.flushInt();
+	l.tokens = append(l.tokens, tok);
+	l.pos += len([]rune(word));
+	return true;
+}
 
 func (l *Lexer) Lex(s string) []token.Token {
 	l.chars = []rune(s)
@@ -77,55 +89,20 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.eat()
 			continue
 		}
+		if l.parseKeyword("let", *token.NewToken(token.LET, "let")){ continue; }
+		if l.parseKeyword("true", *token.NewToken(token.BOOLEAN, "true")){ continue; }
+		if l.parseKeyword("false", *token.NewToken(token.BOOLEAN, "false")){ continue; }
+		if l.parseKeyword("if", *token.NewToken(token.IF, "if")) { continue; }
+		if l.parseKeyword("else", *token.NewToken(token.ELSE, "else")){ continue; }
 
-		if (ch == 'l' || ch == 'L') &&
-			(l.peek(1) == 'e' || l.peek(1) == 'E') &&
-			(l.peek(2) == 't' || l.peek(2) == 'T') {
-			l.flushStr()
-			l.flushInt()
-
-			l.tokens = append(l.tokens, *token.NewToken(token.LET,
-				string([]rune{ch, l.peek(1), l.peek(2)})))
-			l.pos += 3
-			continue
-		}
-		if ch == 't' && l.peek(1) == 'r' && l.peek(2) == 'u' && l.peek(3) == 'e' {
-			l.flushStr()
-			l.flushInt()
-			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "true"))
-			l.pos += 4
-			continue
-		}
-		if ch == 'f' && l.peek(1) == 'a' && l.peek(2) == 'l' && l.peek(3) == 's' && l.peek(4) == 'e' {
-			l.flushStr()
-			l.flushInt()
-			l.tokens = append(l.tokens, *token.NewToken(token.BOOLEAN, "false"))
-			l.pos += 5
-			continue
-		}
-		if ch == 'i' && l.peek(1) == 'f' {
-			l.flushStr()
-			l.flushInt()
-			l.tokens = append(l.tokens, *token.NewToken(token.IF, "if"))
-			l.pos += 2
-			continue
-		}
-		if ch == 'e' && l.peek(1) == 'l' && l.peek(2) == 's' && l.peek(3) == 'e' {
-			l.flushStr()
-			l.flushInt()
-			l.tokens = append(l.tokens, *token.NewToken(token.ELSE, "else"))
-			l.pos += 4
-			continue
-		}
-
-		if ch == ';' {
-			l.flushInt()
-			l.flushStr()
-			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"))
-			l.eat()
-			continue
-		}
 		switch {
+		case ch == ';':
+			l.flushInt();
+			l.flushStr();
+			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"));
+			l.eat();
+			continue;
+		
 		case ch == '+':
 			l.flushInt()
 			l.flushStr()

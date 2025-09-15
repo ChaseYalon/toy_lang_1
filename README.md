@@ -14,12 +14,13 @@ Roadmap:
     e. Else --Done
     g. Variable scopes --Done
 4. Misc
-    a. Parens
-    b. Nested Blocks and Parens
+    a. Parens and Nested Parens -- Done
+    b. Nested Blocks
     c. Elsif
     d. Negative Operator
 5. Functions
 6. Builtin functions
-7. Floating points
-8. User defined data types (structs/classes)
-9. Macros
+7. While loops
+8. Floating points
+9. User defined data types (structs/classes)
+10. Macros
