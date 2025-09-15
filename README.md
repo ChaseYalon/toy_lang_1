@@ -13,7 +13,7 @@ Roadmap:
     d. Conditional Execution --Done
     e. Else --Done
     g. Variable scopes
-4. Parens && Nested blocks
+4. Parens && Nested blocks && negative operator
 5. Functions
 6. Builtin functions
 7. Floating points

@@ -108,7 +108,7 @@ func (n *ReferenceExprNode) NodeType() AstNode {
 func (n *ReferenceExprNode) String() string {
 	return fmt.Sprintf("REFERENCE(%v)", n.Name)
 }
-func (n *ReferenceExprNode)isBool(){}
+func (n *ReferenceExprNode) isBool() {}
 
 type VarReassignNode struct {
 	Var    ReferenceExprNode

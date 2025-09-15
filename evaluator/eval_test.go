@@ -26,7 +26,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 func TestEvaluator(t *testing.T) {
 	tests := []struct {
 		input  string
-		output v_map
+		output map[string]ast.Node
 	}{
 		{
 			input: "let x = 0",
@@ -77,16 +77,15 @@ func TestEvaluator(t *testing.T) {
 			},
 		},
 		{
-			input: "if true{let y = 4;}",
+			input: "let x = 9;if true{let y = 4; x = y;}",
 			output: map[string]ast.Node{
-				"y": &ast.IntLiteralNode{Value: 4},
+				"x": &ast.IntLiteralNode{Value: 4},
 			},
 		},
 		{
 			input: "let x = 5; if 5 < 6{let y = true;}",
 			output: map[string]ast.Node{
 				"x": &ast.IntLiteralNode{Value: 5},
-				"y": &ast.BoolLiteralNode{Value: true},
 			},
 		},
 		{
@@ -99,13 +98,12 @@ func TestEvaluator(t *testing.T) {
 			input: "let x = false; if !x&&true{let y = !x;}",
 			output: map[string]ast.Node{
 				"x": &ast.BoolLiteralNode{Value: false},
-				"y": &ast.BoolLiteralNode{Value: true},
 			},
 		},
 		{
-			input: "if true {let y = 4;} else {let y = 5;}",
+			input: "let x = 0; if true {let y = 4; x = y;} else {let y = 5; x = y;}",
 			output: map[string]ast.Node{
-				"y": &ast.IntLiteralNode{Value: 4},
+				"x": &ast.IntLiteralNode{Value: 4},
 			},
 		},
 		{
@@ -121,10 +119,12 @@ func TestEvaluator(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		lex := lexer.NewLexer()
 		parse := parser.NewParser()
 		exec := NewInterpreter()
-		compareVMap(t, exec.Execute(parse.Parse(lex.Lex(tt.input)), false), tt.output)
+		program := parse.Parse(lex.Lex(tt.input))
+		compareVMap(t, exec.Execute(program, false).Vars, tt.output)
 	}
 }

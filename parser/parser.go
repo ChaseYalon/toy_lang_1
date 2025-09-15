@@ -12,7 +12,6 @@ type Parser struct {
 	tokens  []token.Token
 }
 
-
 func NewParser() *Parser {
 	return &Parser{
 		program: ast.ProgramNode{
@@ -102,35 +101,36 @@ func (p *Parser) preProcess(tokens []token.Token) []token.Token {
 }
 
 func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
-	var toReturn [][]token.Token
-	var inIfMode bool = false
+	var lines [][]token.Token
 	var current []token.Token
-	for _, val := range tokens {
-		if val.TokType == token.SEMICOLON && !inIfMode {
-			toReturn = append(toReturn, current)
+	inBlock := false
+
+	for _, tok := range tokens {
+		current = append(current, tok)
+
+		if tok.TokType == token.SEMICOLON && !inBlock {
+			lines = append(lines, current[:len(current)-1]) // drop semicolon
 			current = []token.Token{}
 			continue
 		}
-		if val.TokType == token.IF {
-			inIfMode = true
-			current = append(current, val)
-			continue
-		}
-		// TEMPORARY CODE - THIS IS BAD
-		if inIfMode && val.TokType == token.RBRACE {
-			current = append(current, val)
-			toReturn = append(toReturn, current)
+
+		if tok.TokType == token.LBRACE {
+			inBlock = true
+		} else if tok.TokType == token.RBRACE {
+			inBlock = false
+			lines = append(lines, current)
 			current = []token.Token{}
-			inIfMode = false
-			continue
 		}
-		current = append(current, val)
 	}
+
 	if len(current) > 0 {
-		toReturn = append(toReturn, current)
+		lines = append(lines, current)
 	}
-	return toReturn
+
+	fmt.Printf("To return: %++v\n", lines)
+	return lines
 }
+
 
 func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {
 	// Functional infinity to start
@@ -214,7 +214,6 @@ func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
 	}
 }
 
-
 func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
 	if tok.TokType != token.VAR_REF {
 		panic(fmt.Sprintf("[ERROR] Expected name of variable, got %v\n", tok))
@@ -285,16 +284,16 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 			Body: parsedStmts,
 		}
 	}
-	if cond.NodeType() == ast.ReferenceExpr{
-		refExpr, ok := cond.(*ast.ReferenceExprNode);
-		if !ok{
-			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond));
+	if cond.NodeType() == ast.ReferenceExpr {
+		refExpr, ok := cond.(*ast.ReferenceExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
 		}
 		return &ast.IfStmtNode{
 			Cond: &ast.BoolInfixNode{
-				Left: refExpr,
+				Left:     refExpr,
 				Operator: token.OR,
-				Right: &ast.BoolLiteralNode{Value: false},
+				Right:    &ast.BoolLiteralNode{Value: false},
 			},
 			Body: parsedStmts,
 		}
@@ -303,40 +302,40 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
 }
 func (p *Parser) parseElseStmt(toks []token.Token) {
-    // Semantic checks
-    if toks[0].TokType != token.ELSE {
-        panic(fmt.Sprintf("[ERROR] Expected else, got %v\n", toks[0]))
-    }
-    
-    // Extract the body between braces (skip ELSE and LBRACE, exclude RBRACE)
-    bodyTokens := toks[2:]
-    
-    body := p.splitIntoLines(bodyTokens)
-    
-    var stmts []ast.Node
-    for i, val := range body {
-        if len(val) > 0 { // Only parse non-empty token slices
-            stmt := p.parseStmt(val)
-            if stmt != nil {
-                stmts = append(stmts, stmt)
-            }
-        } else {
-            fmt.Printf("Skipping empty slice at index %d\n", i) // Debug line
-        }
-    }
-    
-    // Find the last if statement to attach this else to
-    if len(p.program.Statements) == 0 || p.program.Statements[len(p.program.Statements)-1].NodeType() != ast.IfStmt {
-        panic("[ERROR] Could not find if to attach else to")
-    }
-    
-    lastIf, ok := p.program.Statements[len(p.program.Statements)-1].(*ast.IfStmtNode)
-    if !ok {
-        panic("[ERROR] Could not find if to attach else to")
-    }
-    
-    lastIf.Alt = stmts
-    p.program.Statements[len(p.program.Statements)-1] = lastIf
+	// Semantic checks
+	if toks[0].TokType != token.ELSE {
+		panic(fmt.Sprintf("[ERROR] Expected else, got %v\n", toks[0]))
+	}
+
+	// Extract the body between braces (skip ELSE and LBRACE, exclude RBRACE)
+	bodyTokens := toks[2:]
+
+	body := p.splitIntoLines(bodyTokens)
+
+	var stmts []ast.Node
+	for i, val := range body {
+		if len(val) > 0 { // Only parse non-empty token slices
+			stmt := p.parseStmt(val)
+			if stmt != nil {
+				stmts = append(stmts, stmt)
+			}
+		} else {
+			fmt.Printf("Skipping empty slice at index %d\n", i) // Debug line
+		}
+	}
+
+	// Find the last if statement to attach this else to
+	if len(p.program.Statements) == 0 || p.program.Statements[len(p.program.Statements)-1].NodeType() != ast.IfStmt {
+		panic("[ERROR] Could not find if to attach else to")
+	}
+
+	lastIf, ok := p.program.Statements[len(p.program.Statements)-1].(*ast.IfStmtNode)
+	if !ok {
+		panic("[ERROR] Could not find if to attach else to")
+	}
+
+	lastIf.Alt = stmts
+	p.program.Statements[len(p.program.Statements)-1] = lastIf
 }
 
 func (p *Parser) parseStmt(line []token.Token) ast.Node {
@@ -370,9 +369,9 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 	if firstTok.TokType == token.IF {
 		return p.parseIfStmt(line)
 	}
-	if firstTok.TokType == token.ELSE{
-		p.parseElseStmt(line);
-		return nil;
+	if firstTok.TokType == token.ELSE {
+		p.parseElseStmt(line)
+		return nil
 	}
 	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)

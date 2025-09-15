@@ -512,9 +512,9 @@ func TestParser(t *testing.T) {
 							&ast.LetStmtNode{
 								Name: "x",
 								Value: &ast.BoolInfixNode{
-									Left: &ast.IntLiteralNode{Value: 3},
+									Left:     &ast.IntLiteralNode{Value: 3},
 									Operator: token.GREATER_THAN_EQT,
-									Right: &ast.IntLiteralNode{Value: 4},
+									Right:    &ast.IntLiteralNode{Value: 4},
 								},
 							},
 						},
@@ -529,26 +529,26 @@ func TestParser(t *testing.T) {
 					&ast.LetStmtNode{
 						Name: "v",
 						Value: &ast.BoolInfixNode{
-							Left: &ast.BoolLiteralNode{Value: true},
+							Left:     &ast.BoolLiteralNode{Value: true},
 							Operator: token.OR,
-							Right: &ast.BoolLiteralNode{Value: false},
+							Right:    &ast.BoolLiteralNode{Value: false},
 						},
 					},
 					&ast.IfStmtNode{
 						Cond: &ast.BoolInfixNode{
-							Left: &ast.ReferenceExprNode{Name: "v"},
+							Left:     &ast.ReferenceExprNode{Name: "v"},
 							Operator: token.OR,
-							Right: &ast.BoolLiteralNode{Value: false},
+							Right:    &ast.BoolLiteralNode{Value: false},
 						},
 						Body: []ast.Node{
 							&ast.VarReassignNode{
-								Var: ast.ReferenceExprNode{Name: "v"},
+								Var:    ast.ReferenceExprNode{Name: "v"},
 								NewVal: &ast.BoolLiteralNode{Value: false},
 							},
 						},
 						Alt: []ast.Node{
 							&ast.VarReassignNode{
-								Var: ast.ReferenceExprNode{Name: "v"},
+								Var:    ast.ReferenceExprNode{Name: "v"},
 								NewVal: &ast.BoolLiteralNode{Value: true},
 							},
 						},
@@ -556,6 +556,65 @@ func TestParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: "let x = 9;if true{let y = 4; x = y;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.IntLiteralNode{Value: 9},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "y",
+								Value: &ast.IntLiteralNode{Value: 4},
+							},
+							&ast.VarReassignNode{
+								Var:    ast.ReferenceExprNode{Name: "x"},
+								NewVal: &ast.ReferenceExprNode{Name: "y"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "let x = 0; if true {let y = 4; x = y;} else {let y = 5; x = y;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.IntLiteralNode{Value: 0},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolLiteralNode{Value: true},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name: "y",
+								Value: &ast.IntLiteralNode{Value: 4},
+							},
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "x"},
+								NewVal: &ast.ReferenceExprNode{Name: "y"},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.LetStmtNode{
+								Name: "y",
+								Value: &ast.IntLiteralNode{Value: 5},
+							},
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "x"},
+								NewVal: &ast.ReferenceExprNode{Name: "y"},
+							},
+						},
+					},
+				},
+			},
+		},
+
 	}
 
 	for _, tt := range tests {
