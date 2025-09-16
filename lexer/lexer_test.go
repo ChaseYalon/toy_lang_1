@@ -396,7 +396,7 @@ func TestLexer(t *testing.T) {
 		{
 			input: "if true{if !false{let y = 5;}}",
 			output: []token.Token{
-				*token.NewToken(token.IF,"if"),
+				*token.NewToken(token.IF, "if"),
 				*token.NewToken(token.BOOLEAN, "true"),
 				*token.NewToken(token.LBRACE, "{"),
 				*token.NewToken(token.IF, "if"),
@@ -421,6 +421,28 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.MINUS, "-"),
 				*token.NewToken(token.INTEGER, "3"),
 				*token.NewToken(token.SEMICOLON, ";"),
+			},
+		},
+		{
+			input: "fn a(b){let a = b + 2; return a;}",
+			output: []token.Token{
+				*token.NewToken(token.FN, "fn"),
+				*token.NewToken(token.FUNC_NAME, "a"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.VAR_REF, "b"),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "a"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.VAR_REF, "b"),
+				*token.NewToken(token.PLUS, "+"),
+				*token.NewToken(token.INTEGER, "2"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RETURN, "return"),
+				*token.NewToken(token.VAR_REF, "a"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
 	}

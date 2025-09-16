@@ -76,12 +76,12 @@ func NewInterpreter() Interpreter {
 
 func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 	var node ast.Node = inode
-	
+
 	// Handle EmptyExprNode by unwrapping it
 	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
 		node = emptyNode.Child
 	}
-	
+
 	switch node := node.(type) {
 	case *ast.IntLiteralNode:
 		return node.Value
@@ -112,12 +112,12 @@ func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 
 func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 	var node ast.Node = inode
-	
+
 	// Handle EmptyExprNode by unwrapping it
 	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
 		node = emptyNode.Child
 	}
-	
+
 	switch node := node.(type) {
 	case *ast.BoolLiteralNode:
 		return node.Value
@@ -241,7 +241,7 @@ func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope 
 		i.executeStmt(stmt, &i.MainScope)
 	}
 	if should_print {
-		fmt.Printf("%v\n", i.MainScope);
+		fmt.Printf("%v\n", i.MainScope)
 	}
 	return i.MainScope
 }

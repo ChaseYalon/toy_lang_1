@@ -26,6 +26,10 @@ const (
 	LET
 	IF
 	ELSE
+	FN
+	RETURN
+	FUNC_NAME
+
 	//Compound operators
 	COMPOUND_PLUS
 	COMPOUND_MINUS
@@ -120,6 +124,12 @@ func (t TokenType) String() string {
 		return ")"
 	case EMPTY:
 		return "EMPTY"
+	case FN:
+		return "FN"
+	case FUNC_NAME:
+		return "FUNC_NAME"
+	case RETURN:
+		return "RETURN";
 	default:
 		return "UNKNOWN"
 	}

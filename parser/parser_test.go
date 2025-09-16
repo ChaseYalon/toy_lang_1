@@ -690,13 +690,44 @@ func TestParser(t *testing.T) {
 							&ast.IfStmtNode{
 								Cond: &ast.PrefixExprNode{
 									Operator: token.NOT,
-									Value: &ast.BoolLiteralNode{Value: false},
+									Value:    &ast.BoolLiteralNode{Value: false},
 								},
 								Body: []ast.Node{
 									&ast.LetStmtNode{
-										Name: "y",
+										Name:  "y",
 										Value: &ast.IntLiteralNode{Value: 4},
 									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "fn a(b){return b + 3;} let c = a(2);",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncDecNode{
+						Name:   "a",
+						Params: []ast.LetStmtNode{},
+						Body:   []ast.Node{},
+						Return: ast.ReturnExprNode{
+							Val: &ast.InfixExprNode{
+								Left:     &ast.ReferenceExprNode{Name: "b"},
+								Operator: token.PLUS,
+								Right:    &ast.IntLiteralNode{Value: 3},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "c",
+						Value: &ast.FuncCallNode{
+							Name: ast.ReferenceExprNode{Name: "a"},
+							Params: []ast.Node{
+								&ast.LetStmtNode{
+									Name: "b",
+									Value: &ast.IntLiteralNode{Value: 4},
 								},
 							},
 						},

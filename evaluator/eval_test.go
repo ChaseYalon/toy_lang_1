@@ -134,7 +134,7 @@ func TestEvaluator(t *testing.T) {
 		{
 			input: "let x = 0;if true{if !false{let y = 4; x=y;}}",
 			output: map[string]ast.Node{
-				"x": &ast.IntLiteralNode{Value: 4},	
+				"x": &ast.IntLiteralNode{Value: 4},
 			},
 		},
 	}

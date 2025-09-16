@@ -29,6 +29,9 @@ const (
 	PrefixExpr
 	IfStmt
 	EmptyExpr
+	FuncDec
+	FuncCall
+	ReturnExpr
 )
 
 func (n AstNode) String() string {
@@ -224,4 +227,41 @@ func (n *EmptyExprNode) NodeType() AstNode {
 }
 func (n *EmptyExprNode) String() string {
 	return fmt.Sprintf("(%v)", n.Child)
+}
+
+type ReturnExprNode struct {
+	Val Node
+}
+
+func (n *ReturnExprNode) NodeType() AstNode {
+	return ReturnExpr
+}
+func (n *ReturnExprNode) String() string {
+	return fmt.Sprintf("return %v;", n.Val)
+}
+
+type FuncDecNode struct {
+	Name   string
+	Params []LetStmtNode
+	Body   []Node
+	Return ReturnExprNode
+}
+
+func (n *FuncDecNode) NodeType() AstNode {
+	return FuncDec
+}
+func (n *FuncDecNode) String() string {
+	return fmt.Sprintf("fn %v(%+v){%+v}\n", n.Params, n.Body, n.Name)
+}
+
+type FuncCallNode struct {
+	Name   ReferenceExprNode
+	Params []Node
+}
+
+func (n *FuncCallNode) NodeType() AstNode {
+	return FuncCall
+}
+func (n *FuncCallNode) String() string {
+	return fmt.Sprintf("%v(%+v);", n.Name, n.Params)
 }

@@ -51,6 +51,11 @@ func (l *Lexer) flushStr() {
 			l.currString = []rune{}
 			return
 		}
+		if l.tokens[len(l.tokens) - 1].TokType == token.FN{
+			l.tokens = append(l.tokens, *token.NewToken(token.FUNC_NAME, string(l.currString)));
+			l.currString = []rune{};
+			return;
+		}
 		l.tokens = append(l.tokens, *token.NewToken(token.VAR_REF, string(l.currString)))
 		l.currString = []rune{}
 		return
@@ -60,17 +65,17 @@ func (l *Lexer) flushStr() {
 func (l *Lexer) eat() {
 	l.pos++
 }
-func (l *Lexer) parseKeyword(word string, tok token.Token)bool{
+func (l *Lexer) parseKeyword(word string, tok token.Token) bool {
 	for i, val := range []rune(word) {
-		if val != l.peek(i){
-			return false;
+		if val != l.peek(i) {
+			return false
 		}
 	}
-	l.flushStr();
-	l.flushInt();
-	l.tokens = append(l.tokens, tok);
-	l.pos += len([]rune(word));
-	return true;
+	l.flushStr()
+	l.flushInt()
+	l.tokens = append(l.tokens, tok)
+	l.pos += len([]rune(word))
+	return true
 }
 
 func (l *Lexer) Lex(s string) []token.Token {
@@ -89,20 +94,36 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.eat()
 			continue
 		}
-		if l.parseKeyword("let", *token.NewToken(token.LET, "let")){ continue; }
-		if l.parseKeyword("true", *token.NewToken(token.BOOLEAN, "true")){ continue; }
-		if l.parseKeyword("false", *token.NewToken(token.BOOLEAN, "false")){ continue; }
-		if l.parseKeyword("if", *token.NewToken(token.IF, "if")) { continue; }
-		if l.parseKeyword("else", *token.NewToken(token.ELSE, "else")){ continue; }
+		if l.parseKeyword("let", *token.NewToken(token.LET, "let")) {
+			continue
+		}
+		if l.parseKeyword("true", *token.NewToken(token.BOOLEAN, "true")) {
+			continue
+		}
+		if l.parseKeyword("false", *token.NewToken(token.BOOLEAN, "false")) {
+			continue
+		}
+		if l.parseKeyword("if", *token.NewToken(token.IF, "if")) {
+			continue
+		}
+		if l.parseKeyword("else", *token.NewToken(token.ELSE, "else")) {
+			continue
+		}
+		if l.parseKeyword("fn", *token.NewToken(token.FN, "fn")) {
+			continue;
+		}
+		if l.parseKeyword("return", *token.NewToken(token.RETURN, "return")) {
+			continue;
+		}
 
 		switch {
 		case ch == ';':
-			l.flushInt();
-			l.flushStr();
-			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"));
-			l.eat();
-			continue;
-		
+			l.flushInt()
+			l.flushStr()
+			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"))
+			l.eat()
+			continue
+
 		case ch == '+':
 			l.flushInt()
 			l.flushStr()
