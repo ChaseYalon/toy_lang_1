@@ -19,6 +19,7 @@ const (
 	RBRACE
 	LPAREN
 	RPAREN
+	COMMA
 
 	//Keywords
 	VAR_REF
@@ -130,6 +131,8 @@ func (t TokenType) String() string {
 		return "FUNC_NAME"
 	case RETURN:
 		return "RETURN";
+	case COMMA:
+		return "COMMA"
 	default:
 		return "UNKNOWN"
 	}

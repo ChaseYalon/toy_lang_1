@@ -445,6 +445,25 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
+		{		
+			input: "fn add(a, b){return a + b;}",
+			output: []token.Token{
+				*token.NewToken(token.FN, "fn"),
+				*token.NewToken(token.FUNC_NAME, "add"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.VAR_REF, "a"),
+				*token.NewToken(token.COMMA, ","),
+				*token.NewToken(token.VAR_REF, "b"),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.RETURN, "return"),
+				*token.NewToken(token.VAR_REF, "a"),
+				*token.NewToken(token.PLUS, "+"),
+				*token.NewToken(token.VAR_REF, "b"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

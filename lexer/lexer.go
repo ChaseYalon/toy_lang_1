@@ -123,7 +123,12 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"))
 			l.eat()
 			continue
-
+		case ch == ',':
+			l.flushInt();
+			l.flushStr();
+			l.tokens = append(l.tokens, *token.NewToken(token.COMMA, ","))
+			l.eat();
+			continue;
 		case ch == '+':
 			l.flushInt()
 			l.flushStr()

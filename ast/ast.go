@@ -242,7 +242,7 @@ func (n *ReturnExprNode) String() string {
 
 type FuncDecNode struct {
 	Name   string
-	Params []LetStmtNode
+	Params []ReferenceExprNode
 	Body   []Node
 	Return ReturnExprNode
 }
