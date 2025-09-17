@@ -710,7 +710,7 @@ func TestParser(t *testing.T) {
 				Statements: []ast.Node{
 					&ast.FuncDecNode{
 						Name:   "a",
-						Params: []ast.LetStmtNode{},
+						Params: []ast.ReferenceExprNode{},
 						Body:   []ast.Node{},
 						Return: ast.ReturnExprNode{
 							Val: &ast.InfixExprNode{

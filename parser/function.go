@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func (p *Parser) parseFuncDecStmt(toks []token.Token) ast.FuncDecNode{
+func (p *Parser) parseFuncDecStmt(toks []token.Token) *ast.FuncDecNode{
 	if toks[0].TokType != token.FN{
 		panic(fmt.Sprintf("[ERROR] Must use fn to declare function, got %v\n", toks[0]));
 	}
@@ -33,15 +33,26 @@ func (p *Parser) parseFuncDecStmt(toks []token.Token) ast.FuncDecNode{
 		astPrams = append(astPrams, ast.ReferenceExprNode{Name: val.Literal});
 	}
 	var body []ast.Node;
-	toksSplit
+	splitToks := p.splitIntoLines(toks[bodyStartAt : len(toks) - 2]);
+	for _, val := range splitToks{
+		body = append(body, p.parseStmt(val));
+	}
 	protoFuncNode := ast.FuncDecNode{
 		Name: toks[1].Literal,
 		Params: astPrams,
+		Body: body,
 		
 	}
+	return &protoFuncNode
 }
-func (p *Parser) parseReturnStmt(toks []token.Token){
-
+func (p *Parser) parseReturnExpr(toks []token.Token) *ast.ReturnExprNode{
+	if toks[0].TokType != token.RETURN{
+		panic(fmt.Sprintf("[ERROR] Return statement must start with return, got %v\n", toks[0]));
+	}
+	protoReturnExpr := &ast.ReturnExprNode{
+		Val: p.parseStmt(toks[1:]),
+	}
+	return protoReturnExpr;
 }
 func (p *Parser) parseFuncCallStmt(toks []token.Token) ast.FuncCallNode{
 

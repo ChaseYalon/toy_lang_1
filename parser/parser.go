@@ -364,6 +364,12 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 		p.parseElseStmt(line)
 		return nil
 	}
+	if firstTok.TokType == token.FN{
+		return p.parseFuncDecStmt(line);
+	}
+	if firstTok.TokType == token.RETURN{
+		return p.parseReturnExpr(line);
+	}
 	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)
 }
