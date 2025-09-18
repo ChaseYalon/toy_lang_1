@@ -72,7 +72,7 @@ func (n *LetStmtNode) NodeType() AstNode {
 }
 
 func (n *LetStmtNode) String() string {
-	return fmt.Sprintf("%v = %v", n.Name, n.Value)
+	return fmt.Sprintf("let %v = %v", n.Name, n.Value)
 }
 
 // Infix Expression
@@ -157,9 +157,9 @@ func (n *BoolLiteralNode) NodeType() AstNode {
 }
 func (n *BoolLiteralNode) String() string {
 	if n.Value {
-		return "true"
+		return "BOOL(true)"
 	}
-	return "false"
+	return "BOOL(false)"
 }
 
 // Annoying thing to make go work
@@ -251,8 +251,24 @@ func (n *FuncDecNode) NodeType() AstNode {
 	return FuncDec
 }
 func (n *FuncDecNode) String() string {
-	return fmt.Sprintf("fn %v(%+v){%+v}\n", n.Params, n.Body, n.Name)
+    str := fmt.Sprintf("fn %v(", n.Name)
+    for i, p := range n.Params {
+        if i > 0 {
+            str += ", "
+        }
+        str += p.String()
+    }
+    str += ") {\n"
+    for _, stmt := range n.Body {
+        str += fmt.Sprintf("\t%v\n", stmt)
+    }
+    if n.Return.Val != nil {
+        str += fmt.Sprintf("\t%v\n", n.Return.String())
+    }
+    str += "}"
+    return str
 }
+
 
 type FuncCallNode struct {
 	Name   ReferenceExprNode

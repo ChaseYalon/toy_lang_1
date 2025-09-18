@@ -705,12 +705,12 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-			input: "fn a(b){return b + 3;} let c = a(2);",
+			input: "fn a(b){return b + 3;} let c = a(4);",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.FuncDecNode{
 						Name:   "a",
-						Params: []ast.ReferenceExprNode{},
+						Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "b"}},
 						Body:   []ast.Node{},
 						Return: ast.ReturnExprNode{
 							Val: &ast.InfixExprNode{

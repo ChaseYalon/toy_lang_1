@@ -28,7 +28,11 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 
 	var newTokens []token.Token
 	var subNodes []*ast.EmptyExprNode // track nodes corresponding to EMPTY tokens
-
+	if len(tokens) > 1{
+		if tokens[0].TokType == token.VAR_REF && tokens[1].TokType == token.LPAREN{
+			return p.parseFuncCallStmt(tokens)
+		}
+	}
 	i := 0
 	for i < len(tokens) {
 		tok := tokens[i]
@@ -85,6 +89,12 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			val, _ := strconv.ParseBool(tok.Literal)
 			return &ast.BoolLiteralNode{Value: val}
 		case token.VAR_REF:
+			if len(tokens) != 1{
+				if tokens[1].TokType == token.LPAREN{
+					//Function call
+					return p.parseFuncCallStmt(tokens);
+				}
+			}
 			return &ast.ReferenceExprNode{Name: tok.Literal}
 		case token.EMPTY:
 			if len(subNodes) == 0 || subNodes[0] == nil {
@@ -389,4 +399,5 @@ func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
 		}
 	}
 	return p.program
+
 }
