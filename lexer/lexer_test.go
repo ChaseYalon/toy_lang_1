@@ -464,6 +464,27 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
+		{
+			input: "fn a(){return 1;} let b = a();",
+			output: []token.Token{
+				*token.NewToken(token.FN, "fn"),
+				*token.NewToken(token.FUNC_NAME, "a"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.RETURN, "return"),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "b"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.VAR_REF, "a"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

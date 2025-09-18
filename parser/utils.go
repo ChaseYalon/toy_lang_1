@@ -32,7 +32,7 @@ func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
 		current = append(current, tok)
 
 		if tok.TokType == token.SEMICOLON && !inBlock {
-			lines = append(lines, current[:len(current)-1]) // drop semicolon
+			lines = append(lines, current[:len(current)-1])
 			current = []token.Token{}
 			continue
 		}

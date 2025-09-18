@@ -55,5 +55,23 @@ func (p *Parser) parseReturnExpr(toks []token.Token) *ast.ReturnExprNode{
 	return protoReturnExpr;
 }
 func (p *Parser) parseFuncCallStmt(toks []token.Token) ast.FuncCallNode{
+	if toks[0].TokType != token.VAR_REF{
+		panic(fmt.Sprintf("[ERROR] Could not figure out function name, got %v\n", toks[0]));
+	}
+	if toks[1].TokType != token.LPAREN{
+		panic(fmt.Sprintf("[ERROR] Function name bust be followed by \"(\", got %v\n", toks[1]));
+	}
+	protoFuncCall := ast.FuncCallNode{
+		Name: ast.ReferenceExprNode{Name: toks[0].Literal},
 
+	}
+	var params []ast.Node;
+	for _, val := range toks[1:]{
+		if val.TokType != token.COMMA{
+			continue;
+		}
+		params = append(params, p.parseStmt([]token.Token{val}));
+	}
+	protoFuncCall.Params = params;
+	return protoFuncCall;
 }
