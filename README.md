@@ -18,11 +18,16 @@ Roadmap:
     b. Nested Blocks --Done
     c. Negative Operator
 5. Functions
-6. Builtin functions
-7. While loops
-8. Floating points
-9. User defined data types (structs/classes)
-10. Macros
+    a. Function declarations --Done
+    b. Function returns --Done
+    c. Function call --Done
+    d. Using function returns in expressions 
+6. Strings
+7. Builtin functions
+8. While loops
+9. Floating points
+10. User defined data types (structs/classes)
+11. Macros
 
 Notes:
 I have decided not to do elsif, can do it later but if()elsif()else() can just be if()else(if());

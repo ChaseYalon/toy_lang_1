@@ -284,5 +284,5 @@ func (n *FuncCallNode) NodeType() AstNode {
 	return FuncCall
 }
 func (n *FuncCallNode) String() string {
-	return fmt.Sprintf("%v(%+v);", n.Name, n.Params)
+	return fmt.Sprintf("%v(%+v);", n.Name.Name, n.Params)
 }

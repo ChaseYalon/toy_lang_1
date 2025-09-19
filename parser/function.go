@@ -76,18 +76,20 @@ func (p *Parser) parseReturnExpr(toks []token.Token) *ast.ReturnExprNode {
 		Val: p.parseStmt(toks[1:]),
 	}
 }
-
 func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
+	if len(toks) == 0 {
+		panic("[ERROR] Empty tokens to parseFuncCallStmt")
+	}
 	if toks[0].TokType != token.VAR_REF {
 		panic(fmt.Sprintf("[ERROR] Could not figure out function name, got %v\n", toks[0]))
 	}
-	if toks[1].TokType != token.LPAREN {
+	if len(toks) < 2 || toks[1].TokType != token.LPAREN {
 		panic(fmt.Sprintf("[ERROR] Function name must be followed by \"(\", got %v\n", toks[1]))
 	}
 
 	funcName := toks[0].Literal
 
-	// find matching RPAREN
+	// match closing RPAREN
 	depth := 1
 	j := 2
 	for j < len(toks) && depth > 0 {
@@ -95,33 +97,42 @@ func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
 			depth++
 		} else if toks[j].TokType == token.RPAREN {
 			depth--
+			if depth == 0 {
+				break
+			}
 		}
 		j++
 	}
-	if depth != 0 {
+	if depth != 0 || j >= len(toks) {
 		panic("[ERROR] Mismatched parentheses in function call")
 	}
 
-	argTokens := toks[2 : j-1]
+	argTokens := toks[2:j]
 
-	// split args by comma
+	// split args by top-level commas
 	var args [][]token.Token
 	curr := []token.Token{}
-	for _, tok := range argTokens {
-		if tok.TokType == token.COMMA {
+	depth = 0
+	for _, tk := range argTokens {
+		if tk.TokType == token.LPAREN {
+			depth++
+		} else if tk.TokType == token.RPAREN {
+			depth--
+		}
+		if tk.TokType == token.COMMA && depth == 0 {
 			if len(curr) > 0 {
 				args = append(args, curr)
 				curr = []token.Token{}
 			}
-		} else {
-			curr = append(curr, tok)
+			continue
 		}
+		curr = append(curr, tk)
 	}
 	if len(curr) > 0 {
 		args = append(args, curr)
 	}
 
-	// lookup function declaration in program
+	// check for declared params
 	var funcDecl *ast.FuncDecNode
 	for _, stmt := range p.program.Statements {
 		if f, ok := stmt.(*ast.FuncDecNode); ok && f.Name == funcName {
@@ -132,16 +143,21 @@ func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
 
 	var params []ast.Node
 	for i, group := range args {
-		if len(group) > 0 {
-			expr := p.parseExpression(group)
-			paramName := fmt.Sprintf("arg%d", i) // fallback name
-			if funcDecl != nil && i < len(funcDecl.Params) {
-				paramName = funcDecl.Params[i].Name
-			}
+		if len(group) == 0 {
+			continue
+		}
+		val := p.parseExpression(group)
+
+		// Only wrap if it's a primitive expr, not a nested func call
+		_, isCall := val.(*ast.FuncCallNode)
+		if funcDecl != nil && i < len(funcDecl.Params) && !isCall {
+			paramName := funcDecl.Params[i].Name
 			params = append(params, &ast.LetStmtNode{
 				Name:  paramName,
-				Value: expr,
+				Value: val,
 			})
+		} else {
+			params = append(params, val)
 		}
 	}
 

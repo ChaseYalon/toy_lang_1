@@ -5,12 +5,18 @@ import (
 	"toy_lang/ast"
 	"toy_lang/lexer"
 	"toy_lang/token"
+	"fmt"
 )
 
 // compareNodes compares slices of AST nodes and prints mismatches
-func compareNodes(t *testing.T, got, want []ast.Node) {
+func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
+	var Reset = "\033[0m";
+	var Red = "\033[31m";
+	var Green = "\033[32m";
+
+	var stderr string  = "";
 	if len(got) != len(want) {
-		t.Errorf("Length mismatch: got %d, want %d", len(got), len(want))
+		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want));
 	}
 
 	minLen := len(got)
@@ -20,19 +26,27 @@ func compareNodes(t *testing.T, got, want []ast.Node) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i].String() != want[i].String() {
-			t.Errorf("Mismatch at index %d:\n Got:  %v\n Want: %v", i, got[i], want[i])
+			stderr += fmt.Sprintf("Mismatch at index %d:\n Got:  %v\n Want: %v", i, got[i], want[i]);
 		}
 	}
 
 	if len(got) > len(want) {
 		for i := len(want); i < len(got); i++ {
-			t.Errorf("Extra element in got at index %d: %v", i, got[i])
+			stderr += fmt.Sprintf("Extra element in got at index %d: %v", i, got[i])
 		}
 	} else if len(want) > len(got) {
 		for i := len(got); i < len(want); i++ {
-			t.Errorf("Missing element in got at index %d: %v", i, want[i])
+			stderr += fmt.Sprintf("Missing element in got at index %d: %v", i, want[i])
 		}
 	}
+	if stderr != ""{
+		errString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id)+ Reset + fmt.Sprintf("\n____________\nInput: %v\n____________\n %v\n\n\n", tt.input, stderr)
+		t.Error(errString);
+	} else{
+		passString := Green + fmt.Sprintf("[PASS] Test number %d has passed", tt.id) + Reset;
+		fmt.Println(passString);
+	}
+
 }
 
 func compareTokens(t *testing.T, got, want []token.Token) {
@@ -185,13 +199,14 @@ func TestPreParser(t *testing.T) {
 		compareTokens(t, res, tt.output)
 	}
 }
-
+type ttype struct {
+	input  string
+	output ast.ProgramNode
+	id int
+}
 func TestParser(t *testing.T) {
 
-	tests := []struct {
-		input  string
-		output ast.ProgramNode
-	}{
+	tests := []ttype{
 		{
 			input: "let x = 4;",
 			output: ast.ProgramNode{
@@ -204,6 +219,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 1,
 		},
 		{
 			input: "let x = 4 + 5;",
@@ -223,6 +239,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 2,
 		},
 		{
 			input: "let x = 9; x=x+3;",
@@ -250,6 +267,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 3,
 		},
 		{
 			input: "let x = 9; x = x + 3; let y = x / 4;",
@@ -289,6 +307,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 4,
 		},
 		{
 			input: "let x = true; let y = 4;",
@@ -308,6 +327,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 5,
 		},
 		{
 			input: "let x = true || false;",
@@ -327,6 +347,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 6,
 		},
 		{
 			input: "let x = true; let y = !x && !true;",
@@ -354,6 +375,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 7,
 		},
 		{
 			input: "let x = 5 < 6;",
@@ -369,6 +391,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 8,
 		},
 		{
 			input: "let x = 5 >= 6; let y = !x || true;",
@@ -395,6 +418,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 9,
 		},
 		{
 			input: "if true{let y = 4;}",
@@ -411,6 +435,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 10,
 		},
 		{
 			input: "let y = 4; if y < 9{let z = 5;}",
@@ -435,6 +460,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 11,
 		},
 		{
 			input: "let x = 1; if true { if false { x += 5; } }",
@@ -466,6 +492,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 12,
 		},
 		{
 			input: "let x = false; if !x&&true{let y = !x;}",
@@ -496,6 +523,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 13,
 		},
 		{
 			input: "let x = 9; if x < 10{let y = 4;} else {let y = 5;}",
@@ -526,6 +554,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 14,
 		},
 		{
 			input: "if true { let x = 1; } else { let x = 3 >= 4; }",
@@ -552,6 +581,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 15,
 		},
 		{
 			input: "let v = true || false; if v{v = false;} else {v = true;}",
@@ -586,6 +616,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 16,
 		},
 		{
 			input: "let x = 9;if true{let y = 4; x = y;}",
@@ -610,6 +641,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 17,
 		},
 		{
 			input: "let x = 0; if true {let y = 4; x = y;} else {let y = 5; x = y;}",
@@ -644,6 +676,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 18,
 		},
 		{
 			input: "let x = 4 * (8 + 3); let x = 9 / (x + 1);",
@@ -679,6 +712,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 19,
 		},
 		{
 			input: "if true{if !false{let y = 4;}}",
@@ -703,6 +737,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 20,
 		},
 		{
 			input: "fn a(b){return b + 3;} let c = a(4);",
@@ -734,6 +769,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 21,
 		},
 		{
 			input: "fn a(b){return b - 2;} fn c(b){return b + 2;} let d = a(2) + c(2);",
@@ -779,6 +815,47 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 22,
+		},
+		{
+			input: "fn add(a, b){return a + b;} let c = add(add(1, 1), 2);",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncDecNode{
+						Name: "add",
+						Params: []ast.ReferenceExprNode{
+							ast.ReferenceExprNode{ Name: "a" },
+							ast.ReferenceExprNode{ Name: "b" },
+						},
+						Body: []ast.Node{
+							&ast.ReturnExprNode{
+								&ast.InfixExprNode{
+									Left: &ast.ReferenceExprNode{Name: "a"},
+									Operator: token.PLUS,
+									Right: &ast.ReferenceExprNode{Name: "b"},
+								},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "c",
+						Value: &ast.FuncCallNode{
+							Name: ast.ReferenceExprNode{Name: "add"},
+							Params: []ast.Node{
+								&ast.FuncCallNode{
+									Name: ast.ReferenceExprNode{Name: "add"},
+									Params: []ast.Node{
+										&ast.IntLiteralNode{Value: 1},
+										&ast.IntLiteralNode{Value: 1},
+									},
+								},
+								&ast.IntLiteralNode{Value: 2},
+							},
+						},
+					},
+				},
+			},
+			id: 23,
 		},
 	}
 
@@ -788,6 +865,6 @@ func TestParser(t *testing.T) {
 		toks := lex.Lex(tt.input)
 		prog := parse.Parse(toks)
 
-		compareNodes(t, prog.Statements, tt.output.Statements)
+		compareNodes(t, prog.Statements, tt.output.Statements ,tt)
 	}
 }
