@@ -7,6 +7,7 @@ import (
 )
 
 type v_map map[string]ast.Node
+type f_map map[string]ast.FuncDecNode
 
 func (v v_map) String() string {
 	s := "{"
@@ -18,7 +19,8 @@ func (v v_map) String() string {
 }
 
 type Scope struct {
-	Vars   map[string]ast.Node
+	Vars   v_map
+	Funcs  f_map
 	Parent *Scope
 }
 
@@ -31,6 +33,18 @@ func (s *Scope) getVar(name string) (ast.Node, bool) {
 		return s.Parent.getVar(name)
 	}
 	return nil, false
+}
+func (s *Scope) getFunc(name string) (ast.FuncDecNode, bool) {
+	if val, ok := s.Funcs[name]; ok {
+		return val, true
+	}
+	if s.Parent != nil {
+		return s.Parent.getFunc(name)
+	}
+	panic(fmt.Sprintf("[ERROR] Could not find function %v\n", name))
+}
+func (s *Scope) declareFunc(f ast.FuncDecNode) {
+	s.Funcs[f.Name] = f
 }
 
 func (s *Scope) declareVar(name string, val ast.Node) {
@@ -54,6 +68,7 @@ func (s *Scope) assignVar(name string, val ast.Node) bool {
 func (s *Scope) newChild() *Scope {
 	return &Scope{
 		Vars:   make(v_map),
+		Funcs:  make(f_map),
 		Parent: s,
 	}
 }
@@ -69,7 +84,8 @@ type Interpreter struct {
 func NewInterpreter() Interpreter {
 	return Interpreter{
 		MainScope: Scope{
-			Vars: make(v_map),
+			Vars:  make(v_map),
+			Funcs: make(f_map),
 		},
 	}
 }
@@ -176,9 +192,24 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}
+	case *ast.FuncCallNode:
+		// execute the function call and assign its return value
+		result := i.execFuncCall(v, local_scope)
+		if result == nil {
+			panic(fmt.Sprintf("[ERROR] Function %s did not return a value", v.Name.Name))
+		}
+		// Wrap it into the right literal node type
+		switch r := result.(type) {
+		case *ast.IntLiteralNode, *ast.InfixExprNode:
+			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(r, local_scope)}
+		case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
+			valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(r, local_scope)}
+		default:
+			panic(fmt.Sprintf("[ERROR] Unsupported return type from function: %T", r))
+		}
 
 	default:
-		panic(fmt.Sprintf("[ERROR] Unknown value type: %v\n", value))
+		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()));
 	}
 	if valNode == nil {
 		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
@@ -196,7 +227,16 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 	switch n := node.(type) {
 	case *ast.LetStmtNode:
-		i.assignValue(n.Name, n.Value, local_scope, true)
+		fmt.Printf("Calling let stmt with \"let %v = %v\"\n", n.Name, n.Value);
+		if n.Value.NodeType() == ast.LetStmt{
+			lNode, ok := n.Value.(*ast.LetStmtNode);
+			if !ok {
+				panic(fmt.Sprintf("[ERROR] WTF happen with this let statement, got %v\n", node));
+			}
+			i.assignValue(n.Name, lNode.Value, local_scope, true);
+		} else {
+			i.assignValue(n.Name, n.Value, local_scope, true)
+		}
 	case *ast.VarReassignNode:
 		varName := n.Var.Name
 		i.assignValue(varName, n.NewVal, local_scope, false)
@@ -209,18 +249,64 @@ func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
 	cond := i.execBoolExpr(ifStmt.Cond, local_scope)
 	newScope := local_scope.newChild()
 	if cond {
-		fmt.Println("Processing body")
 		for _, stmt := range ifStmt.Body {
 			i.executeStmt(stmt, newScope)
 		}
 	} else {
-		fmt.Println("Processing alt")
 		for _, stmt := range ifStmt.Alt {
 			i.executeStmt(stmt, newScope)
 		}
 	}
 }
 
+func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
+	fCall := node.(*ast.FuncCallNode)
+
+	// look up function
+	f, found := local_scope.getFunc(fCall.Name.Name)
+	if !found {
+		panic(fmt.Sprintf("[ERROR] Could not find func, got %v\n", node))
+	}
+
+	// make a child scope for this call
+	callScope := local_scope.newChild()
+
+	// bind parameters into the *child scope*
+	if len(f.Params) != len(fCall.Params) {
+		panic(fmt.Sprintf("[ERROR] Function %s must be called with exactly %d params, got %d\n",
+			f.Name, len(f.Params), len(fCall.Params)))
+	}
+	for j, param := range f.Params {
+		letStmt := &ast.LetStmtNode{Name: param.Name, Value: fCall.Params[j]}
+		i.changeVarVal(letStmt, callScope)
+	}
+
+	// execute body
+	for _, stmt := range f.Body {
+		if stmt.NodeType() == ast.ReturnExpr {
+			ret := stmt.(*ast.ReturnExprNode)
+			return i.execExpr(ret.Val, callScope)
+		}
+		i.executeStmt(stmt, callScope)
+	}
+
+	// no return => nil
+	return nil
+}
+
+func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
+	fmt.Printf("In exec expr with input: %v\n", node);
+	if node.NodeType() == ast.IntLiteral || node.NodeType() == ast.InfixExpr {
+		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
+	}
+	if node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix || node.NodeType() == ast.PrefixExpr {
+		return &ast.BoolLiteralNode{Value: i.execBoolExpr(node, local_scope)}
+	}
+	if node.NodeType() == ast.FuncCall{
+		return i.execFuncCall(node, local_scope);
+	}
+	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
+}
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	switch node.NodeType() {
 	case ast.IntLiteral, ast.InfixExpr:
@@ -231,6 +317,16 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 		i.changeVarVal(node, local_scope)
 	case ast.IfStmt:
 		i.execIfStmt(node, local_scope)
+	case ast.FuncDec:
+		fNode, ok := node.(*ast.FuncDecNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not find function %v\n", node))
+		}
+		local_scope.declareFunc(*fNode)
+	case ast.FuncCall:
+		fmt.Printf("Calling func call with %v\n", node)
+		i.execFuncCall(node, local_scope)
+
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v", node))
 	}
@@ -243,5 +339,6 @@ func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope 
 	if should_print {
 		fmt.Printf("%v\n", i.MainScope)
 	}
+	fmt.Printf("Output: %v\n", i.MainScope);
 	return i.MainScope
 }

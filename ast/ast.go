@@ -56,6 +56,12 @@ func (n AstNode) String() string {
 		return "PREFIX_EXPR"
 	case EmptyExpr:
 		return "EMPTY_EXPR" //Parens
+	case FuncCall:
+		return "FUNC_CALL"
+	case FuncDec:
+		return "FUNC_DEC"
+	case ReturnExpr:
+		return "RETURN_EXPR"
 	default:
 		return "ILLEGAL"
 	}
@@ -251,24 +257,23 @@ func (n *FuncDecNode) NodeType() AstNode {
 	return FuncDec
 }
 func (n *FuncDecNode) String() string {
-    str := fmt.Sprintf("fn %v(", n.Name)
-    for i, p := range n.Params {
-        if i > 0 {
-            str += ", "
-        }
-        str += p.String()
-    }
-    str += ") {\n"
-    for _, stmt := range n.Body {
-        str += fmt.Sprintf("\t%v\n", stmt)
-    }
-    if n.Return.Val != nil {
-        str += fmt.Sprintf("\t%v\n", n.Return.String())
-    }
-    str += "}"
-    return str
+	str := fmt.Sprintf("fn %v(", n.Name)
+	for i, p := range n.Params {
+		if i > 0 {
+			str += ", "
+		}
+		str += p.String()
+	}
+	str += ") {\n"
+	for _, stmt := range n.Body {
+		str += fmt.Sprintf("\t%v\n", stmt)
+	}
+	if n.Return.Val != nil {
+		str += fmt.Sprintf("\t%v\n", n.Return.String())
+	}
+	str += "}"
+	return str
 }
-
 
 type FuncCallNode struct {
 	Name   ReferenceExprNode

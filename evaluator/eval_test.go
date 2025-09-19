@@ -137,6 +137,18 @@ func TestEvaluator(t *testing.T) {
 				"x": &ast.IntLiteralNode{Value: 4},
 			},
 		},
+		{
+			input: "fn add(a, b){return a + b;}; let c = add(2, 3);",
+			output: map[string]ast.Node{
+				"c": &ast.IntLiteralNode{Value: 5},
+			},
+		},
+		{
+			input: "fn a(b){return b - 2;} fn c(b){return b + 2;} let d = a(2) + c(2);",
+			output: map[string]ast.Node{
+				"d": &ast.IntLiteralNode{Value: 4},
+			},
+		},
 	}
 
 	for _, tt := range tests {

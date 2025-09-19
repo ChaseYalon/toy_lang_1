@@ -445,7 +445,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 			},
 		},
-		{		
+		{
 			input: "fn add(a, b){return a + b;}",
 			output: []token.Token{
 				*token.NewToken(token.FN, "fn"),

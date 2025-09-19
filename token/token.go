@@ -130,7 +130,7 @@ func (t TokenType) String() string {
 	case FUNC_NAME:
 		return "FUNC_NAME"
 	case RETURN:
-		return "RETURN";
+		return "RETURN"
 	case COMMA:
 		return "COMMA"
 	default:

@@ -51,10 +51,10 @@ func (l *Lexer) flushStr() {
 			l.currString = []rune{}
 			return
 		}
-		if l.tokens[len(l.tokens) - 1].TokType == token.FN{
-			l.tokens = append(l.tokens, *token.NewToken(token.FUNC_NAME, string(l.currString)));
-			l.currString = []rune{};
-			return;
+		if l.tokens[len(l.tokens)-1].TokType == token.FN {
+			l.tokens = append(l.tokens, *token.NewToken(token.FUNC_NAME, string(l.currString)))
+			l.currString = []rune{}
+			return
 		}
 		l.tokens = append(l.tokens, *token.NewToken(token.VAR_REF, string(l.currString)))
 		l.currString = []rune{}
@@ -110,10 +110,10 @@ func (l *Lexer) Lex(s string) []token.Token {
 			continue
 		}
 		if l.parseKeyword("fn", *token.NewToken(token.FN, "fn")) {
-			continue;
+			continue
 		}
 		if l.parseKeyword("return", *token.NewToken(token.RETURN, "return")) {
-			continue;
+			continue
 		}
 
 		switch {
@@ -124,11 +124,11 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.eat()
 			continue
 		case ch == ',':
-			l.flushInt();
-			l.flushStr();
+			l.flushInt()
+			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.COMMA, ","))
-			l.eat();
-			continue;
+			l.eat()
+			continue
 		case ch == '+':
 			l.flushInt()
 			l.flushStr()

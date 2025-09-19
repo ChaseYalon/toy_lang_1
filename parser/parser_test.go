@@ -726,9 +726,54 @@ func TestParser(t *testing.T) {
 							Name: ast.ReferenceExprNode{Name: "a"},
 							Params: []ast.Node{
 								&ast.LetStmtNode{
-									Name: "b",
+									Name:  "b",
 									Value: &ast.IntLiteralNode{Value: 4},
 								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			input: "fn a(b){return b - 2;} fn c(b){return b + 2;} let d = a(2) + c(2);",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncDecNode{
+						Name: "a",
+						Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "b"}},
+						Body: []ast.Node{},
+						Return: ast.ReturnExprNode{
+							Val: &ast.InfixExprNode{
+								Left: &ast.ReferenceExprNode{Name: "b"},
+								Operator: token.MINUS,
+								Right: &ast.IntLiteralNode{Value: 2},
+							},
+						},
+					},
+					&ast.FuncDecNode{
+						Name: "c",
+						Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "b"}},
+						Body: []ast.Node{},
+						Return: ast.ReturnExprNode{
+							Val: &ast.InfixExprNode{
+								Left: &ast.ReferenceExprNode{Name: "b"},
+								Operator: token.PLUS,
+								Right: &ast.IntLiteralNode{Value: 2},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "d",
+						Value: &ast.InfixExprNode{
+							Left: &ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "a"},
+								Params: []ast.Node{&ast.IntLiteralNode{Value: 2}},
+							},
+							Operator: token.PLUS,
+							Right: &ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "c"},
+								Params: []ast.Node{&ast.IntLiteralNode{Value: 2}},
 							},
 						},
 					},
