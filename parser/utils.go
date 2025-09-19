@@ -24,10 +24,10 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 }
 
 func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
-	var lines [][]token.Token;
-	var current []token.Token;
-	inBlock := false;
-	inFuncCall := false;
+	var lines [][]token.Token
+	var current []token.Token
+	inBlock := false
+	inFuncCall := false
 	for i, tok := range tokens {
 		current = append(current, tok)
 
@@ -37,15 +37,14 @@ func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
 			continue
 		}
 
+		if tok.TokType == token.VAR_REF && tokens[i].TokType == token.LPAREN {
+			inFuncCall = true
 
-		if tok.TokType == token.VAR_REF && tokens[i].TokType == token.LPAREN{
-			inFuncCall = true;
-			
 		}
-		if inFuncCall && tok.TokType == token.RBRACE{
-			inFuncCall = false;
-			lines = append(lines, current);
-			current = []token.Token{};
+		if inFuncCall && tok.TokType == token.RBRACE {
+			inFuncCall = false
+			lines = append(lines, current)
+			current = []token.Token{}
 		}
 
 		if tok.TokType == token.LBRACE {

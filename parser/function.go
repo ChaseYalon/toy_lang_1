@@ -76,6 +76,7 @@ func (p *Parser) parseReturnExpr(toks []token.Token) *ast.ReturnExprNode {
 		Val: p.parseStmt(toks[1:]),
 	}
 }
+
 func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
 	if len(toks) == 0 {
 		panic("[ERROR] Empty tokens to parseFuncCallStmt")
@@ -132,33 +133,13 @@ func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
 		args = append(args, curr)
 	}
 
-	// check for declared params
-	var funcDecl *ast.FuncDecNode
-	for _, stmt := range p.program.Statements {
-		if f, ok := stmt.(*ast.FuncDecNode); ok && f.Name == funcName {
-			funcDecl = f
-			break
-		}
-	}
-
 	var params []ast.Node
-	for i, group := range args {
+	for _, group := range args {
 		if len(group) == 0 {
 			continue
 		}
 		val := p.parseExpression(group)
-
-		// Only wrap if it's a primitive expr, not a nested func call
-		_, isCall := val.(*ast.FuncCallNode)
-		if funcDecl != nil && i < len(funcDecl.Params) && !isCall {
-			paramName := funcDecl.Params[i].Name
-			params = append(params, &ast.LetStmtNode{
-				Name:  paramName,
-				Value: val,
-			})
-		} else {
-			params = append(params, val)
-		}
+		params = append(params, val)
 	}
 
 	return &ast.FuncCallNode{

@@ -271,7 +271,7 @@ func (n *FuncDecNode) String() string {
 	if n.Return.Val != nil {
 		str += fmt.Sprintf("\t%v\n", n.Return.String())
 	}
-	str += "}"
+	str += "}\n"
 	return str
 }
 

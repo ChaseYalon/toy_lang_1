@@ -209,7 +209,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		}
 
 	default:
-		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()));
+		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}
 	if valNode == nil {
 		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
@@ -227,13 +227,13 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 	switch n := node.(type) {
 	case *ast.LetStmtNode:
-		fmt.Printf("Calling let stmt with \"let %v = %v\"\n", n.Name, n.Value);
-		if n.Value.NodeType() == ast.LetStmt{
-			lNode, ok := n.Value.(*ast.LetStmtNode);
+		fmt.Printf("Calling let stmt with \"let %v = %v\"\n", n.Name, n.Value)
+		if n.Value.NodeType() == ast.LetStmt {
+			lNode, ok := n.Value.(*ast.LetStmtNode)
 			if !ok {
-				panic(fmt.Sprintf("[ERROR] WTF happen with this let statement, got %v\n", node));
+				panic(fmt.Sprintf("[ERROR] WTF happen with this let statement, got %v\n", node))
 			}
-			i.assignValue(n.Name, lNode.Value, local_scope, true);
+			i.assignValue(n.Name, lNode.Value, local_scope, true)
 		} else {
 			i.assignValue(n.Name, n.Value, local_scope, true)
 		}
@@ -295,15 +295,15 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 }
 
 func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
-	fmt.Printf("In exec expr with input: %v\n", node);
+	fmt.Printf("In exec expr with input: %v\n", node)
 	if node.NodeType() == ast.IntLiteral || node.NodeType() == ast.InfixExpr {
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
 	if node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix || node.NodeType() == ast.PrefixExpr {
 		return &ast.BoolLiteralNode{Value: i.execBoolExpr(node, local_scope)}
 	}
-	if node.NodeType() == ast.FuncCall{
-		return i.execFuncCall(node, local_scope);
+	if node.NodeType() == ast.FuncCall {
+		return i.execFuncCall(node, local_scope)
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }
@@ -339,6 +339,6 @@ func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope 
 	if should_print {
 		fmt.Printf("%v\n", i.MainScope)
 	}
-	fmt.Printf("Output: %v\n", i.MainScope);
+	fmt.Printf("Output: %v\n", i.MainScope)
 	return i.MainScope
 }

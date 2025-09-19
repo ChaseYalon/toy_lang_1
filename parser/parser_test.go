@@ -1,22 +1,24 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 	"toy_lang/ast"
 	"toy_lang/lexer"
 	"toy_lang/token"
-	"fmt"
 )
 
 // compareNodes compares slices of AST nodes and prints mismatches
 func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
-	var Reset = "\033[0m";
-	var Red = "\033[31m";
-	var Green = "\033[32m";
+	var Reset = "\033[0m"
+	var Red = "\033[31m"
+	var Green = "\033[32m"
+	var Blue = "\033[34m"
+	var Yellow = "\033[33m"
 
-	var stderr string  = "";
+	var stderr string = ""
 	if len(got) != len(want) {
-		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want));
+		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want))
 	}
 
 	minLen := len(got)
@@ -26,7 +28,7 @@ func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i].String() != want[i].String() {
-			stderr += fmt.Sprintf("Mismatch at index %d:\n Got:  %v\n Want: %v", i, got[i], want[i]);
+			stderr += fmt.Sprintf("Mismatch at index %d:\n Got:  %v\n Want: %v", i, got[i], want[i])
 		}
 	}
 
@@ -39,12 +41,12 @@ func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 			stderr += fmt.Sprintf("Missing element in got at index %d: %v", i, want[i])
 		}
 	}
-	if stderr != ""{
-		errString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id)+ Reset + fmt.Sprintf("\n____________\nInput: %v\n____________\n %v\n\n\n", tt.input, stderr)
-		t.Error(errString);
-	} else{
-		passString := Green + fmt.Sprintf("[PASS] Test number %d has passed", tt.id) + Reset;
-		fmt.Println(passString);
+	if stderr != "" {
+		errString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + fmt.Sprintf("\n____________\nInput: %v\n____________\nERROR\n %v\n", tt.input, stderr) + Blue + fmt.Sprintf("Full output\n%+v\n\n\n", got) + Yellow + fmt.Sprintf("Correct output \n%+v\n\n\n", want) + Reset
+		t.Error(errString)
+	} else {
+		passString := Green + fmt.Sprintf("[PASS] Test number %d has passed", tt.id) + Reset
+		fmt.Println(passString)
 	}
 
 }
@@ -199,11 +201,13 @@ func TestPreParser(t *testing.T) {
 		compareTokens(t, res, tt.output)
 	}
 }
+
 type ttype struct {
 	input  string
 	output ast.ProgramNode
-	id int
+	id     int
 }
+
 func TestParser(t *testing.T) {
 
 	tests := []ttype{
@@ -760,10 +764,7 @@ func TestParser(t *testing.T) {
 						Value: &ast.FuncCallNode{
 							Name: ast.ReferenceExprNode{Name: "a"},
 							Params: []ast.Node{
-								&ast.LetStmtNode{
-									Name:  "b",
-									Value: &ast.IntLiteralNode{Value: 4},
-								},
+								&ast.IntLiteralNode{Value: 4},
 							},
 						},
 					},
@@ -776,26 +777,26 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.FuncDecNode{
-						Name: "a",
+						Name:   "a",
 						Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "b"}},
-						Body: []ast.Node{},
+						Body:   []ast.Node{},
 						Return: ast.ReturnExprNode{
 							Val: &ast.InfixExprNode{
-								Left: &ast.ReferenceExprNode{Name: "b"},
+								Left:     &ast.ReferenceExprNode{Name: "b"},
 								Operator: token.MINUS,
-								Right: &ast.IntLiteralNode{Value: 2},
+								Right:    &ast.IntLiteralNode{Value: 2},
 							},
 						},
 					},
 					&ast.FuncDecNode{
-						Name: "c",
+						Name:   "c",
 						Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "b"}},
-						Body: []ast.Node{},
+						Body:   []ast.Node{},
 						Return: ast.ReturnExprNode{
 							Val: &ast.InfixExprNode{
-								Left: &ast.ReferenceExprNode{Name: "b"},
+								Left:     &ast.ReferenceExprNode{Name: "b"},
 								Operator: token.PLUS,
-								Right: &ast.IntLiteralNode{Value: 2},
+								Right:    &ast.IntLiteralNode{Value: 2},
 							},
 						},
 					},
@@ -803,12 +804,12 @@ func TestParser(t *testing.T) {
 						Name: "d",
 						Value: &ast.InfixExprNode{
 							Left: &ast.FuncCallNode{
-								Name: ast.ReferenceExprNode{Name: "a"},
+								Name:   ast.ReferenceExprNode{Name: "a"},
 								Params: []ast.Node{&ast.IntLiteralNode{Value: 2}},
 							},
 							Operator: token.PLUS,
 							Right: &ast.FuncCallNode{
-								Name: ast.ReferenceExprNode{Name: "c"},
+								Name:   ast.ReferenceExprNode{Name: "c"},
 								Params: []ast.Node{&ast.IntLiteralNode{Value: 2}},
 							},
 						},
@@ -824,15 +825,15 @@ func TestParser(t *testing.T) {
 					&ast.FuncDecNode{
 						Name: "add",
 						Params: []ast.ReferenceExprNode{
-							ast.ReferenceExprNode{ Name: "a" },
-							ast.ReferenceExprNode{ Name: "b" },
+							ast.ReferenceExprNode{Name: "a"},
+							ast.ReferenceExprNode{Name: "b"},
 						},
 						Body: []ast.Node{
 							&ast.ReturnExprNode{
 								&ast.InfixExprNode{
-									Left: &ast.ReferenceExprNode{Name: "a"},
+									Left:     &ast.ReferenceExprNode{Name: "a"},
 									Operator: token.PLUS,
-									Right: &ast.ReferenceExprNode{Name: "b"},
+									Right:    &ast.ReferenceExprNode{Name: "b"},
 								},
 							},
 						},
@@ -865,6 +866,6 @@ func TestParser(t *testing.T) {
 		toks := lex.Lex(tt.input)
 		prog := parse.Parse(toks)
 
-		compareNodes(t, prog.Statements, tt.output.Statements ,tt)
+		compareNodes(t, prog.Statements, tt.output.Statements, tt)
 	}
 }
