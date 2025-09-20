@@ -17,7 +17,6 @@ func (p *Parser) parseFuncDecStmt(toks []token.Token) *ast.FuncDecNode {
 		panic(fmt.Sprintf("[ERROR] Function name must be followed by \"(\", got %v\n", toks[2]))
 	}
 
-	// ----------- Collect params -----------
 	params := []token.Token{}
 	i := 3
 	for i < len(toks) && toks[i].TokType != token.RPAREN {
@@ -35,7 +34,6 @@ func (p *Parser) parseFuncDecStmt(toks []token.Token) *ast.FuncDecNode {
 		astParams = append(astParams, ast.ReferenceExprNode{Name: val.Literal})
 	}
 
-	// ----------- Collect body -----------
 	if toks[i+1].TokType != token.LBRACE {
 		panic(fmt.Sprintf("[ERROR] Expected { after params, got %v", toks[i+1]))
 	}
@@ -90,7 +88,6 @@ func (p *Parser) parseFuncCallStmt(toks []token.Token) *ast.FuncCallNode {
 
 	funcName := toks[0].Literal
 
-	// match closing RPAREN
 	depth := 1
 	j := 2
 	for j < len(toks) && depth > 0 {

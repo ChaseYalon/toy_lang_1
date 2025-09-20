@@ -28,7 +28,7 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 
 	var newTokens []token.Token
 	var subNodes []*ast.EmptyExprNode // track nodes corresponding to EMPTY tokens
-	
+
 	i := 0
 	for i < len(tokens) {
 		tok := tokens[i]
@@ -109,6 +109,9 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 		case token.BOOLEAN:
 			val, _ := strconv.ParseBool(tok.Literal)
 			return &ast.BoolLiteralNode{Value: val}
+		case token.STRING:
+			fmt.Printf("In string literal, got %v\n", tokens)
+			return &ast.StringLiteralNode{Value: tok.Literal}
 		case token.VAR_REF:
 			if len(tokens) != 1 {
 				if tokens[1].TokType == token.LPAREN {
@@ -192,6 +195,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 
 		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
 		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
+		fmt.Printf("In parse sub expr default branch, input: %v, left: %v, right: %v\n", tokens, left, right)
 		return &ast.InfixExprNode{
 			Left:     left,
 			Operator: lowestTok.TokType,
@@ -399,12 +403,6 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 
 func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
 	var tokGroups [][]token.Token = p.splitIntoLines(p.preProcess(tokens))
-	/*
-		At the start of each tok group there should be one of the following
-			Let -> Making New variable
-			Var_Ref -> Referencing old variable
-			Var_ref, assign -> Reassigning old variable
-	*/
 	for _, line := range tokGroups {
 		n := p.parseStmt(line)
 		if n != nil {

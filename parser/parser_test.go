@@ -8,7 +8,6 @@ import (
 	"toy_lang/token"
 )
 
-
 // deepCompare compares two AST nodes recursively
 func deepCompare(got, want ast.Node) bool {
 	if got == nil || want == nil {
@@ -17,21 +16,21 @@ func deepCompare(got, want ast.Node) bool {
 
 	// Handle EmptyExprNode specially
 	if g, ok := got.(*ast.EmptyExprNode); ok {
-	
+
 		return deepCompare(g.Child, want)
 	}
 	if w, ok := want.(*ast.EmptyExprNode); ok {
 		return deepCompare(got, w.Child)
 	}
-	if got.NodeType() == ast.LetStmt && want.NodeType() == ast.LetStmt{
-		g, ok := got.(*ast.LetStmtNode);
-		w, ok2 := got.(*ast.LetStmtNode);
-		if !ok && !ok2{
-			panic("[TESTS FAILED TO RUN]");
+	if got.NodeType() == ast.LetStmt && want.NodeType() == ast.LetStmt {
+		g, ok := got.(*ast.LetStmtNode)
+		w, ok2 := got.(*ast.LetStmtNode)
+		if !ok && !ok2 {
+			panic("[TESTS FAILED TO RUN]")
 		}
-		namesEq := g.Name == w.Name;
-		valueEq := deepCompare(g.Value, w.Value);
-		return namesEq && valueEq;
+		namesEq := g.Name == w.Name
+		valueEq := deepCompare(g.Value, w.Value)
+		return namesEq && valueEq
 	}
 
 	// If types differ, they’re not equal
@@ -91,7 +90,6 @@ func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 		fmt.Println(passString)
 	}
 }
-
 
 func compareTokens(t *testing.T, got, want []token.Token) {
 	if len(got) != len(want) {
@@ -898,6 +896,85 @@ func TestParser(t *testing.T) {
 				},
 			},
 			id: 23,
+		},
+		{
+			input: `let x = "hi";`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.StringLiteralNode{Value: "hi"},
+					},
+				},
+			},
+			id: 24,
+		},
+		{
+			input: `let x = "hello" + "world";`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.StringLiteralNode{Value: "hello"},
+							Operator: token.PLUS,
+							Right:    &ast.StringLiteralNode{Value: "world"},
+						},
+					},
+				},
+			},
+			id: 25,
+		},
+		{
+			input: `let hello = "hello " + "world";`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "hello",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.StringLiteralNode{Value: "hello "},
+							Operator: token.PLUS,
+							Right:    &ast.StringLiteralNode{Value: "world"},
+						},
+					},
+				},
+			},
+			id: 26,
+		},
+		{
+			input: `fn concat(a, b){return a + b;} let hello = concat("hello ", "world");`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncDecNode{
+						Name: "concat",
+						Params: []ast.ReferenceExprNode{
+							ast.ReferenceExprNode{Name: "a"},
+							ast.ReferenceExprNode{Name: "b"},
+						},
+						Body: []ast.Node{
+							&ast.ReturnExprNode{
+								Val: &ast.InfixExprNode{
+									Left:     &ast.ReferenceExprNode{Name: "a"},
+									Operator: token.PLUS,
+									Right:    &ast.ReferenceExprNode{Name: "b"},
+								},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "hello",
+						Value: &ast.FuncCallNode{
+							Name: ast.ReferenceExprNode{Name: "concat"},
+							Params: []ast.Node{
+								&ast.StringLiteralNode{Value: "hello "},
+								&ast.StringLiteralNode{Value: "world"},
+							},
+						},
+					},
+				},
+			},
+			id: 27,
 		},
 	}
 

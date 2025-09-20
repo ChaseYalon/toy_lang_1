@@ -32,6 +32,7 @@ const (
 	FuncDec
 	FuncCall
 	ReturnExpr
+	StringLiteral
 )
 
 func (n AstNode) String() string {
@@ -62,6 +63,8 @@ func (n AstNode) String() string {
 		return "FUNC_DEC"
 	case ReturnExpr:
 		return "RETURN_EXPR"
+	case StringLiteral:
+		return "STRING_LITERAL"
 	default:
 		return "ILLEGAL"
 	}
@@ -285,4 +288,15 @@ func (n *FuncCallNode) NodeType() AstNode {
 }
 func (n *FuncCallNode) String() string {
 	return fmt.Sprintf("%v(%+v)", n.Name.Name, n.Params)
+}
+
+type StringLiteralNode struct {
+	Value string
+}
+
+func (n *StringLiteralNode) NodeType() AstNode {
+	return StringLiteral
+}
+func (n *StringLiteralNode) String() string {
+	return fmt.Sprintf("STRING(%v)", n.Value)
 }

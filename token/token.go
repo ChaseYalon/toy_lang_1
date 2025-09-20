@@ -42,6 +42,7 @@ const (
 	//Datatypes
 	INTEGER
 	BOOLEAN
+	STRING
 
 	//Boolean operators
 	LESS_THAN
@@ -133,6 +134,8 @@ func (t TokenType) String() string {
 		return "RETURN"
 	case COMMA:
 		return "COMMA"
+	case STRING:
+		return "STRING"
 	default:
 		return "UNKNOWN"
 	}

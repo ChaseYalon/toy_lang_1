@@ -11,6 +11,7 @@ type Lexer struct {
 	chars      []rune
 	pos        int
 	tokens     []token.Token
+	inString   bool
 }
 
 func NewLexer() *Lexer {
@@ -20,6 +21,7 @@ func NewLexer() *Lexer {
 		currString: []rune{},
 		pos:        0,
 		tokens:     []token.Token{},
+		inString:   false,
 	}
 }
 
@@ -87,8 +89,13 @@ func (l *Lexer) Lex(s string) []token.Token {
 
 	for l.pos < len(l.chars) {
 		ch := l.getChar()
+		if l.inString && ch != '"' {
+			l.currString = append(l.currString, ch)
+			l.eat()
+			continue
+		}
 
-		if ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r' {
+		if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r') && !l.inString {
 			l.flushInt()
 			l.flushStr()
 			l.eat()
@@ -181,6 +188,18 @@ func (l *Lexer) Lex(s string) []token.Token {
 
 				l.tokens = append(l.tokens, *token.NewToken(token.ASSIGN, "="))
 			}
+		case ch == '"':
+			if l.inString {
+				// closing quote
+				l.tokens = append(l.tokens, *token.NewToken(token.STRING, string(l.currString)))
+				l.currString = []rune{}
+				l.inString = false
+			} else {
+				// opening quote
+				l.inString = true
+			}
+			l.eat()
+			continue
 		case ch == '>':
 			l.flushInt()
 			l.flushStr()

@@ -11,7 +11,8 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.MULTIPLY:         2,
 		token.DIVIDE:           2,
 		token.BOOLEAN:          100,
-		token.INTEGER:          100, // Boolean, int, and var ref should never be "bound to"
+		token.INTEGER:          100, // Boolean, int, string, and var ref should never be "bound to"
+		token.STRING:           100,
 		token.VAR_REF:          100,
 		token.AND:              3,
 		token.OR:               3,
@@ -24,39 +25,39 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 }
 
 func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
-    var lines [][]token.Token
-    var current []token.Token
-    inBlock := 0
-    parenDepth := 0
+	var lines [][]token.Token
+	var current []token.Token
+	inBlock := 0
+	parenDepth := 0
 
-    for _, tok := range tokens {
-        current = append(current, tok)
+	for _, tok := range tokens {
+		current = append(current, tok)
 
-        switch tok.TokType {
-        case token.LBRACE:
-            inBlock++
-        case token.RBRACE:
-            inBlock--
-            if inBlock == 0 {
-                lines = append(lines, current)
-                current = []token.Token{}
-            }
-        case token.LPAREN:
-            parenDepth++
-        case token.RPAREN:
-            parenDepth--
-        case token.SEMICOLON:
-            if inBlock == 0 && parenDepth == 0 {
-                lines = append(lines, current[:len(current)-1])
-                current = []token.Token{}
-            }
-        }
-    }
+		switch tok.TokType {
+		case token.LBRACE:
+			inBlock++
+		case token.RBRACE:
+			inBlock--
+			if inBlock == 0 {
+				lines = append(lines, current)
+				current = []token.Token{}
+			}
+		case token.LPAREN:
+			parenDepth++
+		case token.RPAREN:
+			parenDepth--
+		case token.SEMICOLON:
+			if inBlock == 0 && parenDepth == 0 {
+				lines = append(lines, current[:len(current)-1])
+				current = []token.Token{}
+			}
+		}
+	}
 
-    if len(current) > 0 {
-        lines = append(lines, current)
-    }
-    return lines
+	if len(current) > 0 {
+		lines = append(lines, current)
+	}
+	return lines
 }
 
 func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {

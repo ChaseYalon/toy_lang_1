@@ -53,7 +53,8 @@ func (s *Scope) declareVar(name string, val ast.Node) {
 }
 
 func (s *Scope) assignVar(name string, val ast.Node) bool {
-	if val.NodeType() == ast.IntLiteral || val.NodeType() == ast.BoolLiteral {
+	// Fixed: Added StringLiteral to the condition
+	if val.NodeType() == ast.IntLiteral || val.NodeType() == ast.BoolLiteral || val.NodeType() == ast.StringLiteral {
 		if _, ok := s.Vars[name]; ok {
 			s.Vars[name] = val
 			return true
@@ -188,13 +189,28 @@ func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 }
 
 func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scope, isDeclaration bool) {
-    if emptyNode, ok := value.(*ast.EmptyExprNode); ok {
-        value = emptyNode.Child
-    }
+	if emptyNode, ok := value.(*ast.EmptyExprNode); ok {
+		value = emptyNode.Child
+	}
 	var valNode ast.Node
 
+	// Check if this is a string operation first
+	if value.NodeType() == ast.InfixExpr {
+		iNode, ok := value.(*ast.InfixExprNode)
+		if ok && iNode.Operator == token.PLUS {
+			// Check if either operand suggests this is a string operation
+			if i.isStringExpression(iNode.Left, local_scope) || i.isStringExpression(iNode.Right, local_scope) {
+				valNode = &ast.StringLiteralNode{Value: i.execStringExpr(value, local_scope)}
+				goto AfterStringParse
+			}
+		}
+	}
+
 	switch v := value.(type) {
-	case *ast.IntLiteralNode, *ast.InfixExprNode:
+	case *ast.IntLiteralNode:
+		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
+	case *ast.InfixExprNode:
+		// If we get here, it's not a string operation, so it must be int
 		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
@@ -208,6 +224,8 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(refVal, local_scope)}
 		case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 			valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(refVal, local_scope)}
+		case *ast.StringLiteralNode:
+			valNode = &ast.StringLiteralNode{Value: i.execStringExpr(refVal, local_scope)}
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}
@@ -221,17 +239,21 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(r, local_scope)}
 		case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 			valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(r, local_scope)}
+		case *ast.StringLiteralNode:
+			valNode = &ast.StringLiteralNode{Value: i.execStringExpr(r, local_scope)}
 		default:
 			panic(fmt.Sprintf("[ERROR] Unsupported return type from function: %T", r))
 		}
+	case *ast.StringLiteralNode:
+		valNode = &ast.StringLiteralNode{Value: i.execStringExpr(v, local_scope)}
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}
-	
+AfterStringParse:
 	if valNode == nil {
 		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
 	}
-	
+
 	if isDeclaration {
 		local_scope.declareVar(name, valNode)
 	} else {
@@ -290,7 +312,7 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 		panic(fmt.Sprintf("[ERROR] Function %s must be called with exactly %d params, got %d\n",
 			f.Name, len(f.Params), len(fCall.Params)))
 	}
-	
+
 	for j, param := range f.Params {
 		letStmt := &ast.LetStmtNode{Name: param.Name, Value: fCall.Params[j]}
 		i.changeVarVal(letStmt, callScope)
@@ -307,8 +329,84 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 	return nil
 }
 
+func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
+	if node.NodeType() == ast.StringLiteral {
+		strNode, ok := node.(*ast.StringLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to string literal, got %v\n", node))
+		}
+		return strNode.Value
+	}
+	if node.NodeType() == ast.InfixExpr {
+		infNode, ok := node.(*ast.InfixExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to infix expression, got %v\n", node))
+		}
+		if infNode.Operator != token.PLUS {
+			panic(fmt.Sprintf("[ERROR] Only supported operator on strings is plus, got %v", infNode.Operator))
+		}
+		return i.execStringExpr(infNode.Left, local_scope) + i.execStringExpr(infNode.Right, local_scope)
+	}
+	if node.NodeType() == ast.ReferenceExpr {
+		refNode, ok := node.(*ast.ReferenceExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to reference expression, got %v\n", node))
+		}
+		val, exists := local_scope.getVar(refNode.Name)
+		if !exists {
+			panic(fmt.Sprintf("[ERROR] Undefined variable %s", refNode.Name))
+		}
+		strNode, ok := val.(*ast.StringLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Expected string, got %v", val))
+		}
+		return strNode.Value
+	}
+	panic(fmt.Sprintf("[ERROR] Type unsupported for string operations, got %v\n", node.NodeType()))
+}
+
+func (i *Interpreter) isStringExpression(node ast.Node, local_scope *Scope) bool {
+	switch node.NodeType() {
+	case ast.StringLiteral:
+		return true
+	case ast.ReferenceExpr:
+		refNode, ok := node.(*ast.ReferenceExprNode)
+		if !ok {
+			return false
+		}
+		val, exists := local_scope.getVar(refNode.Name)
+		if !exists {
+			return false
+		}
+		return val.NodeType() == ast.StringLiteral
+	case ast.InfixExpr:
+		infixNode, ok := node.(*ast.InfixExprNode)
+		if !ok {
+			return false
+		}
+		return i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope)
+	case ast.FuncCall:
+		// For function calls, we need to execute and check the return type
+		// This is a bit more complex, but for now we'll assume it could be a string
+		// A more robust solution would involve type checking or trying to execute
+		return true
+	}
+	return false
+}
+
 func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
-	if node.NodeType() == ast.IntLiteral || node.NodeType() == ast.InfixExpr {
+	if node.NodeType() == ast.IntLiteral {
+		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
+	}
+	if node.NodeType() == ast.InfixExpr {
+		// Check if this is a string operation by examining the operands
+		infixNode, ok := node.(*ast.InfixExprNode)
+		if ok && infixNode.Operator == token.PLUS {
+			// Check if either operand is a string
+			if i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope) {
+				return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
+			}
+		}
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
 	if node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix || node.NodeType() == ast.PrefixExpr {
@@ -316,6 +414,9 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	if node.NodeType() == ast.FuncCall {
 		return i.execFuncCall(node, local_scope)
+	}
+	if node.NodeType() == ast.StringLiteral {
+		return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }
@@ -338,6 +439,8 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 		local_scope.declareFunc(*fNode)
 	case ast.FuncCall:
 		i.execFuncCall(node, local_scope)
+	case ast.StringLiteral:
+		i.execStringExpr(node, local_scope)
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v", node))
 	}
@@ -348,6 +451,7 @@ func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope 
 		i.executeStmt(stmt, &i.MainScope)
 	}
 	if should_print {
+		fmt.Printf("Main scope: %v\n", i.MainScope)
 	}
 	return i.MainScope
 }

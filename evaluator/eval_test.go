@@ -1,8 +1,8 @@
 package evaluator
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"toy_lang/ast"
 	"toy_lang/lexer"
 	"toy_lang/parser"
@@ -14,7 +14,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 	var Green = "\033[32m"
 	var Blue = "\033[34m"
 	var Yellow = "\033[33m"
-	var stderr = "";
+	var stderr = ""
 	if len(got) != len(want) {
 		stderr += fmt.Sprintf("[FAIL] Wanted %d variables, Got %d variables", len(want), len(got))
 	}
@@ -28,18 +28,20 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 			stderr += fmt.Sprintf("[FAIL] Wanted %v = %v, Got %v = %v", key, wantVal, key, gotVal)
 		}
 	}
-	if stderr != ""{
-		errorString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + "\n____________\n" + tt.input + "\n____________\n" +"ERROR\n" + stderr + "\n\n\n" + Blue + fmt.Sprintf("Full output\n %+v\n\n\n%v Correct output\n%+v", got, Yellow, want) + Reset; 
-		t.Error(errorString);
+	if stderr != "" {
+		errorString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + "\n____________\n" + tt.input + "\n____________\n" + "ERROR\n" + stderr + "\n\n\n" + Blue + fmt.Sprintf("Full output\n %+v\n\n\n%v Correct output\n%+v", got, Yellow, want) + Reset
+		t.Error(errorString)
 	} else {
-		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, tt.id, Reset);
+		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, tt.id, Reset)
 	}
 }
-type tEvalRes struct{
-	input string
+
+type tEvalRes struct {
+	input  string
 	output map[string]ast.Node
-	id int
+	id     int
 }
+
 func TestEvaluator(t *testing.T) {
 	tests := []tEvalRes{
 		{
@@ -181,6 +183,34 @@ func TestEvaluator(t *testing.T) {
 				"d": &ast.IntLiteralNode{Value: 4},
 			},
 			id: 19,
+		},
+		{
+			input: `let x = "hi";`,
+			output: map[string]ast.Node{
+				"x": &ast.StringLiteralNode{Value: "hi"},
+			},
+			id: 20,
+		},
+		{
+			input: `let x = "hello" + "world";`,
+			output: map[string]ast.Node{
+				"x": &ast.StringLiteralNode{Value: "helloworld"},
+			},
+			id: 21,
+		},
+		{
+			input: `fn outStr(a, b){return a + b;} let h = outStr("hello", "world");`,
+			output: map[string]ast.Node{
+				"h": &ast.StringLiteralNode{Value: "helloworld"},
+			},
+			id: 22,
+		},
+		{
+			input: `fn concat(a, b){return a + b;} let hello = concat("hello ", "world");`,
+			output: map[string]ast.Node{
+				"hello": &ast.StringLiteralNode{Value: "hello world"},
+			},
+			id: 23,
 		},
 	}
 

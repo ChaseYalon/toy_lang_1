@@ -1,9 +1,9 @@
 package lexer
 
 import (
+	"fmt"
 	"testing"
 	"toy_lang/token"
-	"fmt"
 )
 
 func compareTokens(t *testing.T, got, want []token.Token, tt lTest) {
@@ -12,9 +12,9 @@ func compareTokens(t *testing.T, got, want []token.Token, tt lTest) {
 	var Green = "\033[32m"
 	var Blue = "\033[34m"
 	var Yellow = "\033[33m"
-	var stderr = "";
+	var stderr = ""
 	if len(got) != len(want) {
-		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want));
+		stderr += fmt.Sprintf("Length mismatch: got %d, want %d\n", len(got), len(want))
 	}
 
 	minLen := len(got)
@@ -24,31 +24,33 @@ func compareTokens(t *testing.T, got, want []token.Token, tt lTest) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i] != want[i] {
-			stderr += fmt.Sprintf("Mismatch at index %d: got %+v, want %+v", i, got[i], want[i]);
+			stderr += fmt.Sprintf("Mismatch at index %d: got %+v, want %+v\n", i, got[i], want[i])
 		}
 	}
 
 	if len(got) > len(want) {
 		for i := len(want); i < len(got); i++ {
-			stderr += fmt.Sprintf("Extra element in got at index %d: %+v", i, got[i])
+			stderr += fmt.Sprintf("Extra element in got at index %d: %+v\n", i, got[i])
 		}
 	} else if len(want) > len(got) {
 		for i := len(got); i < len(want); i++ {
-			stderr += fmt.Sprintf("Missing element in got at index %d: %+v", i, want[i])
+			stderr += fmt.Sprintf("Missing element in got at index %d: %+v\n", i, want[i])
 		}
 	}
-	if stderr != ""{
-		errorString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + "\n____________\n" + tt.input + "\n____________\n" +"ERROR\n" + stderr + "\n\n\n" + Blue + fmt.Sprintf("Full output\n %+v\n\n\n%v Correct output\n%+v", got, Yellow, want) + Reset; 
+	if stderr != "" {
+		errorString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + "\n____________\n" + tt.input + "\n____________\n" + "ERROR\n" + stderr + "\n\n\n" + Blue + fmt.Sprintf("Full output\n %+v\n\n\n%v Correct output\n%+v", got, Yellow, want) + Reset
 		t.Error(errorString)
 	} else {
-		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, tt.id, Reset);
+		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, tt.id, Reset)
 	}
 }
-type lTest struct{
-	input string
+
+type lTest struct {
+	input  string
 	output []token.Token
-	id int
+	id     int
 }
+
 func TestLexer(t *testing.T) {
 	lex := NewLexer()
 	tests := []lTest{
@@ -551,7 +553,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.VAR_REF, "a"),
 				*token.NewToken(token.LPAREN, "("),
 				*token.NewToken(token.INTEGER, "2"),
-				*token.NewToken(token.RPAREN,")"),
+				*token.NewToken(token.RPAREN, ")"),
 				*token.NewToken(token.PLUS, "+"),
 				*token.NewToken(token.VAR_REF, "c"),
 				*token.NewToken(token.LPAREN, "("),
@@ -560,6 +562,30 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
 			id: 22,
+		},
+		{
+			input: `let x = "hi";`,
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.STRING, `hi`),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 23,
+		},
+		{
+			input: `let x = "hello " + "world";`,
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.STRING, "hello "),
+				*token.NewToken(token.PLUS, "+"),
+				*token.NewToken(token.STRING, "world"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 24,
 		},
 	}
 	for _, tt := range tests {

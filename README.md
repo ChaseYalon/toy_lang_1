@@ -23,6 +23,9 @@ Roadmap:
     c. Function call --Done
     d. Using function returns in expressions --Done
 6. Strings
+    a. String Literals --Done
+    b. String conation --Finicky
+    c. String value comparison with ASCII 
 7. Builtin functions
 8. While loops
 9. Floating points
