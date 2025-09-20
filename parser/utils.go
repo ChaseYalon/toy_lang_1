@@ -24,43 +24,39 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 }
 
 func (p *Parser) splitIntoLines(tokens []token.Token) [][]token.Token {
-	var lines [][]token.Token
-	var current []token.Token
-	inBlock := false
-	inFuncCall := false
-	for i, tok := range tokens {
-		current = append(current, tok)
+    var lines [][]token.Token
+    var current []token.Token
+    inBlock := 0
+    parenDepth := 0
 
-		if tok.TokType == token.SEMICOLON && !inBlock && !inFuncCall {
-			lines = append(lines, current[:len(current)-1])
-			current = []token.Token{}
-			continue
-		}
+    for _, tok := range tokens {
+        current = append(current, tok)
 
-		if tok.TokType == token.VAR_REF && tokens[i].TokType == token.LPAREN {
-			inFuncCall = true
+        switch tok.TokType {
+        case token.LBRACE:
+            inBlock++
+        case token.RBRACE:
+            inBlock--
+            if inBlock == 0 {
+                lines = append(lines, current)
+                current = []token.Token{}
+            }
+        case token.LPAREN:
+            parenDepth++
+        case token.RPAREN:
+            parenDepth--
+        case token.SEMICOLON:
+            if inBlock == 0 && parenDepth == 0 {
+                lines = append(lines, current[:len(current)-1])
+                current = []token.Token{}
+            }
+        }
+    }
 
-		}
-		if inFuncCall && tok.TokType == token.RBRACE {
-			inFuncCall = false
-			lines = append(lines, current)
-			current = []token.Token{}
-		}
-
-		if tok.TokType == token.LBRACE {
-			inBlock = true
-		} else if tok.TokType == token.RBRACE {
-			inBlock = false
-			lines = append(lines, current)
-			current = []token.Token{}
-		}
-	}
-
-	if len(current) > 0 {
-		lines = append(lines, current)
-	}
-
-	return lines
+    if len(current) > 0 {
+        lines = append(lines, current)
+    }
+    return lines
 }
 
 func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) (token.Token, int) {

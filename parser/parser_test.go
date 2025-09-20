@@ -8,6 +8,41 @@ import (
 	"toy_lang/token"
 )
 
+
+// deepCompare compares two AST nodes recursively
+func deepCompare(got, want ast.Node) bool {
+	if got == nil || want == nil {
+		return got == want
+	}
+
+	// Handle EmptyExprNode specially
+	if g, ok := got.(*ast.EmptyExprNode); ok {
+	
+		return deepCompare(g.Child, want)
+	}
+	if w, ok := want.(*ast.EmptyExprNode); ok {
+		return deepCompare(got, w.Child)
+	}
+	if got.NodeType() == ast.LetStmt && want.NodeType() == ast.LetStmt{
+		g, ok := got.(*ast.LetStmtNode);
+		w, ok2 := got.(*ast.LetStmtNode);
+		if !ok && !ok2{
+			panic("[TESTS FAILED TO RUN]");
+		}
+		namesEq := g.Name == w.Name;
+		valueEq := deepCompare(g.Value, w.Value);
+		return namesEq && valueEq;
+	}
+
+	// If types differ, they’re not equal
+	if got.NodeType() != want.NodeType() {
+		return false
+	}
+
+	// Compare string forms if node types match
+	return got.String() == want.String()
+}
+
 // compareNodes compares slices of AST nodes and prints mismatches
 func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 	var Reset = "\033[0m"
@@ -16,9 +51,10 @@ func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 	var Blue = "\033[34m"
 	var Yellow = "\033[33m"
 
-	var stderr string = ""
+	var stderr string
+
 	if len(got) != len(want) {
-		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want))
+		stderr += fmt.Sprintf("Length mismatch: got %d, want %d\n", len(got), len(want))
 	}
 
 	minLen := len(got)
@@ -27,29 +63,35 @@ func compareNodes(t *testing.T, got, want []ast.Node, tt ttype) {
 	}
 
 	for i := 0; i < minLen; i++ {
-		if got[i].String() != want[i].String() {
-			stderr += fmt.Sprintf("Mismatch at index %d:\n Got:  %v\n Want: %v", i, got[i], want[i])
+		if !deepCompare(got[i], want[i]) {
+			stderr += fmt.Sprintf("Mismatch at index %d:\n Got:  %v\n Want: %v\n",
+				i, got[i], want[i])
 		}
 	}
 
+	// Check extras
 	if len(got) > len(want) {
 		for i := len(want); i < len(got); i++ {
-			stderr += fmt.Sprintf("Extra element in got at index %d: %v", i, got[i])
+			stderr += fmt.Sprintf("Extra element in got at index %d: %v\n", i, got[i])
 		}
 	} else if len(want) > len(got) {
 		for i := len(got); i < len(want); i++ {
-			stderr += fmt.Sprintf("Missing element in got at index %d: %v", i, want[i])
+			stderr += fmt.Sprintf("Missing element in got at index %d: %v\n", i, want[i])
 		}
 	}
+
 	if stderr != "" {
-		errString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + fmt.Sprintf("\n____________\nInput: %v\n____________\nERROR\n %v\n", tt.input, stderr) + Blue + fmt.Sprintf("Full output\n%+v\n\n\n", got) + Yellow + fmt.Sprintf("Correct output \n%+v\n\n\n", want) + Reset
+		errString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset +
+			fmt.Sprintf("\n____________\nInput: %v\n____________\nERROR\n %v\n", tt.input, stderr) +
+			Blue + fmt.Sprintf("Full output\n%+v\n\n\n", got) +
+			Yellow + fmt.Sprintf("Correct output \n%+v\n\n\n", want) + Reset
 		t.Error(errString)
 	} else {
 		passString := Green + fmt.Sprintf("[PASS] Test number %d has passed", tt.id) + Reset
 		fmt.Println(passString)
 	}
-
 }
+
 
 func compareTokens(t *testing.T, got, want []token.Token) {
 	if len(got) != len(want) {
@@ -63,7 +105,6 @@ func compareTokens(t *testing.T, got, want []token.Token) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i] != want[i] {
-
 			t.Errorf("Mismatch at index %d: got %+v, want %+v", i, got[i], want[i])
 		}
 	}
@@ -830,7 +871,7 @@ func TestParser(t *testing.T) {
 						},
 						Body: []ast.Node{
 							&ast.ReturnExprNode{
-								&ast.InfixExprNode{
+								Val: &ast.InfixExprNode{
 									Left:     &ast.ReferenceExprNode{Name: "a"},
 									Operator: token.PLUS,
 									Right:    &ast.ReferenceExprNode{Name: "b"},

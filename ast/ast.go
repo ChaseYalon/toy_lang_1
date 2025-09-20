@@ -243,7 +243,7 @@ func (n *ReturnExprNode) NodeType() AstNode {
 	return ReturnExpr
 }
 func (n *ReturnExprNode) String() string {
-	return fmt.Sprintf("return %v;", n.Val)
+	return fmt.Sprintf("return %v", n.Val)
 }
 
 type FuncDecNode struct {
@@ -284,5 +284,5 @@ func (n *FuncCallNode) NodeType() AstNode {
 	return FuncCall
 }
 func (n *FuncCallNode) String() string {
-	return fmt.Sprintf("%v(%+v);", n.Name.Name, n.Params)
+	return fmt.Sprintf("%v(%+v)", n.Name.Name, n.Params)
 }

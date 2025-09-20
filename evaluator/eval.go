@@ -24,7 +24,6 @@ type Scope struct {
 	Parent *Scope
 }
 
-// Look up a variable recursively
 func (s *Scope) getVar(name string) (ast.Node, bool) {
 	if val, ok := s.Vars[name]; ok {
 		return val, true
@@ -34,6 +33,7 @@ func (s *Scope) getVar(name string) (ast.Node, bool) {
 	}
 	return nil, false
 }
+
 func (s *Scope) getFunc(name string) (ast.FuncDecNode, bool) {
 	if val, ok := s.Funcs[name]; ok {
 		return val, true
@@ -41,8 +41,9 @@ func (s *Scope) getFunc(name string) (ast.FuncDecNode, bool) {
 	if s.Parent != nil {
 		return s.Parent.getFunc(name)
 	}
-	panic(fmt.Sprintf("[ERROR] Could not find function %v\n", name))
+	return ast.FuncDecNode{}, false
 }
+
 func (s *Scope) declareFunc(f ast.FuncDecNode) {
 	s.Funcs[f.Name] = f
 }
@@ -93,7 +94,6 @@ func NewInterpreter() Interpreter {
 func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 	var node ast.Node = inode
 
-	// Handle EmptyExprNode by unwrapping it
 	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
 		node = emptyNode.Child
 	}
@@ -109,6 +109,16 @@ func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 		intNode, ok := val.(*ast.IntLiteralNode)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Expected int, got %v", val))
+		}
+		return intNode.Value
+	case *ast.FuncCallNode:
+		result := i.execFuncCall(node, local_scope)
+		if result == nil {
+			panic(fmt.Sprintf("[ERROR] Function %s did not return a value", node.Name.Name))
+		}
+		intNode, ok := result.(*ast.IntLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Expected int return from function, got %v", result))
 		}
 		return intNode.Value
 	case *ast.InfixExprNode:
@@ -129,7 +139,6 @@ func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 	var node ast.Node = inode
 
-	// Handle EmptyExprNode by unwrapping it
 	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
 		node = emptyNode.Child
 	}
@@ -147,6 +156,16 @@ func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 		boolNode, ok := val.(*ast.BoolLiteralNode)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Expected bool, got %v", val))
+		}
+		return boolNode.Value
+	case *ast.FuncCallNode:
+		result := i.execFuncCall(node, local_scope)
+		if result == nil {
+			panic(fmt.Sprintf("[ERROR] Function %s did not return a value", node.Name.Name))
+		}
+		boolNode, ok := result.(*ast.BoolLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Expected bool return from function, got %v", result))
 		}
 		return boolNode.Value
 	case *ast.BoolInfixNode:
@@ -169,7 +188,9 @@ func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 }
 
 func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scope, isDeclaration bool) {
-
+    if emptyNode, ok := value.(*ast.EmptyExprNode); ok {
+        value = emptyNode.Child
+    }
 	var valNode ast.Node
 
 	switch v := value.(type) {
@@ -178,12 +199,10 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
 	case *ast.ReferenceExprNode:
-		// Look up the referenced variable
 		refVal, ok := local_scope.getVar(v.Name)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Undefined variable %s of type %v\n", v.Name, v.NodeType()))
 		}
-		// Evaluate based on the actual type of the referenced node
 		switch refVal := refVal.(type) {
 		case *ast.IntLiteralNode, *ast.InfixExprNode:
 			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(refVal, local_scope)}
@@ -193,12 +212,10 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}
 	case *ast.FuncCallNode:
-		// execute the function call and assign its return value
 		result := i.execFuncCall(v, local_scope)
 		if result == nil {
 			panic(fmt.Sprintf("[ERROR] Function %s did not return a value", v.Name.Name))
 		}
-		// Wrap it into the right literal node type
 		switch r := result.(type) {
 		case *ast.IntLiteralNode, *ast.InfixExprNode:
 			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(r, local_scope)}
@@ -207,14 +224,14 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		default:
 			panic(fmt.Sprintf("[ERROR] Unsupported return type from function: %T", r))
 		}
-
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}
+	
 	if valNode == nil {
 		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
-	} else {
 	}
+	
 	if isDeclaration {
 		local_scope.declareVar(name, valNode)
 	} else {
@@ -244,6 +261,7 @@ func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 		panic(fmt.Sprintf("[ERROR] Unsupported node type: %T", node))
 	}
 }
+
 func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
 	ifStmt := node.(*ast.IfStmtNode)
 	cond := i.execBoolExpr(ifStmt.Cond, local_scope)
@@ -262,26 +280,23 @@ func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
 func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 	fCall := node.(*ast.FuncCallNode)
 
-	// look up function
 	f, found := local_scope.getFunc(fCall.Name.Name)
 	if !found {
-		panic(fmt.Sprintf("[ERROR] Could not find func, got %v\n", node))
+		panic(fmt.Sprintf("[ERROR] Could not find function %s\n", fCall.Name.Name))
 	}
 
-	// make a child scope for this call
 	callScope := local_scope.newChild()
 
-	// bind parameters into the *child scope*
 	if len(f.Params) != len(fCall.Params) {
 		panic(fmt.Sprintf("[ERROR] Function %s must be called with exactly %d params, got %d\n",
 			f.Name, len(f.Params), len(fCall.Params)))
 	}
+	
 	for j, param := range f.Params {
 		letStmt := &ast.LetStmtNode{Name: param.Name, Value: fCall.Params[j]}
 		i.changeVarVal(letStmt, callScope)
 	}
 
-	// execute body
 	for _, stmt := range f.Body {
 		if stmt.NodeType() == ast.ReturnExpr {
 			ret := stmt.(*ast.ReturnExprNode)
@@ -290,12 +305,10 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 		i.executeStmt(stmt, callScope)
 	}
 
-	// no return => nil
 	return nil
 }
 
 func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
-	fmt.Printf("In exec expr with input: %v\n", node)
 	if node.NodeType() == ast.IntLiteral || node.NodeType() == ast.InfixExpr {
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
@@ -307,6 +320,7 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }
+
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	switch node.NodeType() {
 	case ast.IntLiteral, ast.InfixExpr:
@@ -326,7 +340,6 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	case ast.FuncCall:
 		fmt.Printf("Calling func call with %v\n", node)
 		i.execFuncCall(node, local_scope)
-
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v", node))
 	}
