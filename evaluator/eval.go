@@ -244,7 +244,6 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 	switch n := node.(type) {
 	case *ast.LetStmtNode:
-		fmt.Printf("Calling let stmt with \"let %v = %v\"\n", n.Name, n.Value)
 		if n.Value.NodeType() == ast.LetStmt {
 			lNode, ok := n.Value.(*ast.LetStmtNode)
 			if !ok {
@@ -338,7 +337,6 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 		}
 		local_scope.declareFunc(*fNode)
 	case ast.FuncCall:
-		fmt.Printf("Calling func call with %v\n", node)
 		i.execFuncCall(node, local_scope)
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v", node))
@@ -350,8 +348,6 @@ func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope 
 		i.executeStmt(stmt, &i.MainScope)
 	}
 	if should_print {
-		fmt.Printf("%v\n", i.MainScope)
 	}
-	fmt.Printf("Output: %v\n", i.MainScope)
 	return i.MainScope
 }

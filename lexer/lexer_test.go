@@ -1,14 +1,20 @@
 package lexer
 
 import (
-	"slices"
 	"testing"
 	"toy_lang/token"
+	"fmt"
 )
 
-func compareTokens(t *testing.T, got, want []token.Token) {
+func compareTokens(t *testing.T, got, want []token.Token, tt lTest) {
+	var Reset = "\033[0m"
+	var Red = "\033[31m"
+	var Green = "\033[32m"
+	var Blue = "\033[34m"
+	var Yellow = "\033[33m"
+	var stderr = "";
 	if len(got) != len(want) {
-		t.Errorf("Length mismatch: got %d, want %d", len(got), len(want))
+		stderr += fmt.Sprintf("Length mismatch: got %d, want %d", len(got), len(want));
 	}
 
 	minLen := len(got)
@@ -18,26 +24,34 @@ func compareTokens(t *testing.T, got, want []token.Token) {
 
 	for i := 0; i < minLen; i++ {
 		if got[i] != want[i] {
-			t.Errorf("Mismatch at index %d: got %+v, want %+v", i, got[i], want[i])
+			stderr += fmt.Sprintf("Mismatch at index %d: got %+v, want %+v", i, got[i], want[i]);
 		}
 	}
 
 	if len(got) > len(want) {
 		for i := len(want); i < len(got); i++ {
-			t.Errorf("Extra element in got at index %d: %+v", i, got[i])
+			stderr += fmt.Sprintf("Extra element in got at index %d: %+v", i, got[i])
 		}
 	} else if len(want) > len(got) {
 		for i := len(got); i < len(want); i++ {
-			t.Errorf("Missing element in got at index %d: %+v", i, want[i])
+			stderr += fmt.Sprintf("Missing element in got at index %d: %+v", i, want[i])
 		}
 	}
+	if stderr != ""{
+		errorString := Red + fmt.Sprintf("[FAILURE] Test number %d has failed", tt.id) + Reset + "\n____________\n" + tt.input + "\n____________\n" +"ERROR\n" + stderr + "\n\n\n" + Blue + fmt.Sprintf("Full output\n %+v\n\n\n%v Correct output\n%+v", got, Yellow, want) + Reset; 
+		t.Error(errorString)
+	} else {
+		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, tt.id, Reset);
+	}
+}
+type lTest struct{
+	input string
+	output []token.Token
+	id int
 }
 func TestLexer(t *testing.T) {
 	lex := NewLexer()
-	tests := []struct {
-		input  string
-		output []token.Token
-	}{
+	tests := []lTest{
 		{
 			input: "let x = 4;",
 			output: []token.Token{
@@ -47,6 +61,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.INTEGER, "4"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 1,
 		},
 		{
 			input: "let x = 7; let y = 9 + x; x++;",
@@ -67,6 +82,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.PLUS_PLUS, "++"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 2,
 		},
 		{
 			input: "let x = 3; x+=1; x-=3; x*=4; x/=6; x--;",
@@ -96,8 +112,8 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.MINUS_MINUS, "--"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 3,
 		},
-		//Boolean literal tests
 		{
 			input: "let b = true; let y = false;",
 			output: []token.Token{
@@ -112,8 +128,8 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.BOOLEAN, "false"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 4,
 		},
-		//Boolean Operator tests
 		{
 			input: "let b = 5 < 6; let a = b && true;",
 			output: []token.Token{
@@ -132,6 +148,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.BOOLEAN, "true"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 5,
 		},
 		{
 			input: "let b = true || false; let c = !b;",
@@ -150,6 +167,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.VAR_REF, "b"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 6,
 		},
 		{
 			input: "let x = 4 >= 5; let y = 5 <= 9;",
@@ -169,6 +187,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.INTEGER, "9"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 7,
 		},
 		{
 			input: "if 3==4{let x = 5;}",
@@ -185,6 +204,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 8,
 		},
 		{
 			input: "let x = 9; if x < 5{let y = 4;}",
@@ -206,6 +226,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 9,
 		},
 		{
 			input: "let y = true || false; if y{let x = 5;}",
@@ -227,6 +248,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 10,
 		},
 		{
 			input: "let x = true && !false; if x{if false{let y = 4;}}",
@@ -253,6 +275,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 11,
 		},
 		{
 			input: "let x = false; if !x&&true{let y = !x;}",
@@ -276,6 +299,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 12,
 		},
 		{
 			input: "let x= 5; if x <=6{let y = 9;}else{let z = 5;}",
@@ -305,6 +329,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 13,
 		},
 		{
 			input: "if false{let y = 9;}else{let z = 3;}",
@@ -327,6 +352,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 14,
 		},
 		{
 			input: "let x = 0; if true {let y = 4; x = y;} else {let y = 5; x = y;}",
@@ -362,6 +388,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 15,
 		},
 		{
 			input: "let x = 4*(8+3); if !(x < 10){let y = 5;}",
@@ -392,6 +419,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 16,
 		},
 		{
 			input: "if true{if !false{let y = 5;}}",
@@ -411,6 +439,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RBRACE, "}"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 17,
 		},
 		{
 			input: "let x = -3;",
@@ -422,6 +451,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.INTEGER, "3"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 18,
 		},
 		{
 			input: "fn a(b){let a = b + 2; return a;}",
@@ -444,6 +474,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 19,
 		},
 		{
 			input: "fn add(a, b){return a + b;}",
@@ -463,6 +494,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.RBRACE, "}"),
 			},
+			id: 20,
 		},
 		{
 			input: "fn a(){return 1;} let b = a();",
@@ -484,6 +516,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RPAREN, ")"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 21,
 		},
 		{
 			input: "fn a(b){return b - 2;} fn c(b){return b + 2;} let d = a(2) + c(2);",
@@ -526,13 +559,11 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.RPAREN, ")"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},
+			id: 22,
 		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)
-		if !slices.Equal(res, tt.output) {
-			res := lex.Lex(tt.input)
-			compareTokens(t, res, tt.output)
-		}
+		compareTokens(t, res, tt.output, tt)
 	}
 }

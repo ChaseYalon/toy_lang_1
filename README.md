@@ -16,12 +16,12 @@ Roadmap:
 4. Misc
     a. Parens and Nested Parens -- Done
     b. Nested Blocks --Done
-    c. Negative Operator
+    c. Negative Operator --Done
 5. Functions
     a. Function declarations --Done
     b. Function returns --Done
     c. Function call --Done
-    d. Using function returns in expressions 
+    d. Using function returns in expressions --Done
 6. Strings
 7. Builtin functions
 8. While loops
