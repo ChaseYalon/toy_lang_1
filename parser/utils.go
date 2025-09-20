@@ -10,8 +10,8 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.MINUS:            1,
 		token.MULTIPLY:         2,
 		token.DIVIDE:           2,
-		token.MODULO:			2,
-		token.EXPONENT:			3,
+		token.MODULO:           2,
+		token.EXPONENT:         3,
 		token.BOOLEAN:          100,
 		token.INTEGER:          100, // Boolean, int, string, and var ref should never be "bound to"
 		token.STRING:           100,

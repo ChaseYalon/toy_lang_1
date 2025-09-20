@@ -49,6 +49,7 @@ const (
 	INTEGER
 	BOOLEAN
 	STRING
+	FLOAT
 
 	//Boolean operators
 	LESS_THAN
@@ -155,6 +156,8 @@ func (t TokenType) String() string {
 		return "MODULO"
 	case EXPONENT:
 		return "EXPONENT"
+	case FLOAT:
+		return "FLOAT"
 	default:
 		return "UNKNOWN"
 	}

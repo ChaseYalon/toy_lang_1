@@ -38,11 +38,23 @@ func (l *Lexer) peek(n int) rune {
 	}
 	return l.chars[l.pos+n]
 }
-
-func (l *Lexer) flushInt() {
+func (l *Lexer) containsDot() bool {
+	for _, val := range l.currNum {
+		if val == '.' {
+			return true
+		}
+	}
+	return false
+}
+func (l *Lexer) flushNum() {
 	if len(l.currNum) != 0 {
-		l.tokens = append(l.tokens, *token.NewToken(token.INTEGER, string(l.currNum)))
-		l.currNum = []rune{}
+		if !l.containsDot() {
+			l.tokens = append(l.tokens, *token.NewToken(token.INTEGER, string(l.currNum)))
+			l.currNum = []rune{}
+		} else {
+			l.tokens = append(l.tokens, *token.NewToken(token.FLOAT, string(l.currNum)))
+			l.currNum = []rune{}
+		}
 	}
 }
 
@@ -76,7 +88,7 @@ func (l *Lexer) parseKeyword(word string, tok token.Token) bool {
 		}
 	}
 	l.flushStr()
-	l.flushInt()
+	l.flushNum()
 	l.tokens = append(l.tokens, tok)
 	l.pos += len([]rune(word))
 	return true
@@ -98,7 +110,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 		}
 
 		if (ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r') && !l.inString {
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.eat()
 			continue
@@ -124,31 +136,31 @@ func (l *Lexer) Lex(s string) []token.Token {
 		if l.parseKeyword("return", *token.NewToken(token.RETURN, "return")) {
 			continue
 		}
-		if l.parseKeyword("while", *token.NewToken(token.WHILE, "while")){
+		if l.parseKeyword("while", *token.NewToken(token.WHILE, "while")) {
 			continue
 		}
-		if l.parseKeyword("continue", *token.NewToken(token.CONTINUE, "continue")){
-			continue;
+		if l.parseKeyword("continue", *token.NewToken(token.CONTINUE, "continue")) {
+			continue
 		}
-		if l.parseKeyword("break", *token.NewToken(token.BREAK, "break")){
-			continue;
+		if l.parseKeyword("break", *token.NewToken(token.BREAK, "break")) {
+			continue
 		}
 
 		switch {
 		case ch == ';':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"))
 			l.eat()
 			continue
 		case ch == ',':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.COMMA, ","))
 			l.eat()
 			continue
 		case ch == '+':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_PLUS, "+="))
@@ -160,7 +172,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 				l.tokens = append(l.tokens, *token.NewToken(token.PLUS, "+"))
 			}
 		case ch == '-':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_MINUS, "-="))
@@ -172,23 +184,23 @@ func (l *Lexer) Lex(s string) []token.Token {
 				l.tokens = append(l.tokens, *token.NewToken(token.MINUS, "-"))
 			}
 		case ch == '*':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_MULTIPLY, "*="))
 				l.eat()
-			} else if l.peek(1) == '*'{
-				l.tokens = append(l.tokens, *token.NewToken(token.EXPONENT, "*"));
-				l.eat();
-			}else{
+			} else if l.peek(1) == '*' {
+				l.tokens = append(l.tokens, *token.NewToken(token.EXPONENT, "*"))
+				l.eat()
+			} else {
 				l.tokens = append(l.tokens, *token.NewToken(token.MULTIPLY, "*"))
 			}
 		case ch == '%':
-			l.flushInt();
-			l.flushStr();
+			l.flushNum()
+			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.MODULO, "%"))
 		case ch == '/':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_DIVIDE, "/="))
@@ -197,7 +209,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 				l.tokens = append(l.tokens, *token.NewToken(token.DIVIDE, "/"))
 			}
 		case ch == '=':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.EQUALS, "=="))
@@ -219,7 +231,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.eat()
 			continue
 		case ch == '>':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN_EQT, ">="))
@@ -228,7 +240,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 				l.tokens = append(l.tokens, *token.NewToken(token.GREATER_THAN, ">"))
 			}
 		case ch == '<':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN_EQT, "<="))
@@ -237,56 +249,56 @@ func (l *Lexer) Lex(s string) []token.Token {
 				l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN, "<"))
 			}
 		case ch == '&' && l.peek(1) == '&':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.AND, "&&"))
 			l.eat()
 		case ch == '|' && l.peek(1) == '|':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.OR, "||"))
 			l.eat()
 		case ch == '!':
 			if l.peek(1) == '=' {
-				l.flushInt()
+				l.flushNum()
 				l.flushStr()
 				l.tokens = append(l.tokens, *token.NewToken(token.NOT_EQUAL, "!="))
 				l.eat()
 			} else {
 
-				l.flushInt()
+				l.flushNum()
 				l.flushStr()
 				l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"))
 			}
 		case ch == '{':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.LBRACE, "{"))
 		case ch == '}':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.RBRACE, "}"))
 		case ch == '(':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.LPAREN, "("))
 		case ch == ')':
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.RPAREN, ")"))
 		case unicode.IsLetter(ch) || (len(l.currString) > 0 && unicode.IsDigit(ch)):
-			l.flushInt()
+			l.flushNum()
 			l.currString = append(l.currString, ch)
 			l.eat()
 			continue
-		case unicode.IsDigit(ch):
+		case unicode.IsDigit(ch) || ch == '.':
 			l.flushStr()
 			l.currNum = append(l.currNum, ch)
 			l.eat()
 			continue
 
 		default:
-			l.flushInt()
+			l.flushNum()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.ILLEGAL, string(ch)))
 		}
@@ -294,7 +306,7 @@ func (l *Lexer) Lex(s string) []token.Token {
 		l.eat()
 	}
 
-	l.flushInt()
+	l.flushNum()
 	l.flushStr()
 
 	return l.tokens

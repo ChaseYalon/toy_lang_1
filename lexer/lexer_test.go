@@ -699,6 +699,17 @@ func TestLexer(t *testing.T) {
 			},
 			id: 32,
 		},
+		{
+			input: "let x = 0.342;",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.FLOAT, "0.342"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 33,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

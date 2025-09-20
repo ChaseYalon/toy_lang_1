@@ -1041,22 +1041,22 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "x",
+						Name:  "x",
 						Value: &ast.IntLiteralNode{Value: 1},
 					},
 					&ast.WhileStmtNode{
 						Cond: &ast.BoolInfixNode{
-							Left: &ast.ReferenceExprNode{Name: "x"},
+							Left:     &ast.ReferenceExprNode{Name: "x"},
 							Operator: token.LESS_THAN,
-							Right: &ast.IntLiteralNode{Value: 4},
+							Right:    &ast.IntLiteralNode{Value: 4},
 						},
 						Body: []ast.Node{
 							&ast.VarReassignNode{
 								Var: ast.ReferenceExprNode{Name: "x"},
 								NewVal: &ast.InfixExprNode{
-									Left: &ast.ReferenceExprNode{Name: "x"},
+									Left:     &ast.ReferenceExprNode{Name: "x"},
 									Operator: token.PLUS,
-									Right: &ast.IntLiteralNode{Value: 1},
+									Right:    &ast.IntLiteralNode{Value: 1},
 								},
 							},
 						},
@@ -1065,46 +1065,57 @@ func TestParser(t *testing.T) {
 			},
 		},
 		{
-    input: "let x = 10; while x < 100{if x == 11{continue;} if x == 30{break;}}",
-    output: ast.ProgramNode{
-        Statements: []ast.Node{
-            &ast.LetStmtNode{
-                Name: "x",
-                Value: &ast.IntLiteralNode{Value: 10},
-            },
-            &ast.WhileStmtNode{
-                Cond: &ast.BoolInfixNode{
-                    Left:     &ast.ReferenceExprNode{Name: "x"},
-                    Operator: token.LESS_THAN,
-                    Right:    &ast.IntLiteralNode{Value: 100},
-                },
-                Body: []ast.Node{
-                    &ast.IfStmtNode{
-                        Cond: &ast.BoolInfixNode{
-                            Left:     &ast.ReferenceExprNode{Name: "x"},
-                            Operator: token.EQUALS,
-                            Right:    &ast.IntLiteralNode{Value: 11},
-                        },
-                        Body: []ast.Node{
-                            &ast.ContinueStmtNode{},
-                        },
-                    },
-                    &ast.IfStmtNode{
-                        Cond: &ast.BoolInfixNode{
-                            Left:     &ast.ReferenceExprNode{Name: "x"},
-                            Operator: token.EQUALS,
-                            Right:    &ast.IntLiteralNode{Value: 30},
-                        },
-                        Body: []ast.Node{
-                            &ast.BreakStmtNode{},
-                        },
-                    },
-                },
-            },
-        },
-    },
-    id: 31,
-},
+			input: "let x = 10; while x < 100{if x == 11{continue;} if x == 30{break;}}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.IntLiteralNode{Value: 10},
+					},
+					&ast.WhileStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left:     &ast.ReferenceExprNode{Name: "x"},
+							Operator: token.LESS_THAN,
+							Right:    &ast.IntLiteralNode{Value: 100},
+						},
+						Body: []ast.Node{
+							&ast.IfStmtNode{
+								Cond: &ast.BoolInfixNode{
+									Left:     &ast.ReferenceExprNode{Name: "x"},
+									Operator: token.EQUALS,
+									Right:    &ast.IntLiteralNode{Value: 11},
+								},
+								Body: []ast.Node{
+									&ast.ContinueStmtNode{},
+								},
+							},
+							&ast.IfStmtNode{
+								Cond: &ast.BoolInfixNode{
+									Left:     &ast.ReferenceExprNode{Name: "x"},
+									Operator: token.EQUALS,
+									Right:    &ast.IntLiteralNode{Value: 30},
+								},
+								Body: []ast.Node{
+									&ast.BreakStmtNode{},
+								},
+							},
+						},
+					},
+				},
+			},
+			id: 31,
+		},
+		{
+			input: "let x = 3.1415969;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.FloatLiteralNode{Value: 3.1415969},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

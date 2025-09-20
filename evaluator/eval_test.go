@@ -54,11 +54,11 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 }
 
 type tEvalRes struct {
-	input string
-	output map[string]ast.Node
-	want_str string
+	input     string
+	output    map[string]ast.Node
+	want_str  string
 	enter_str string
-	id int
+	id        int
 }
 
 func TestEvaluator(t *testing.T) {
@@ -263,25 +263,25 @@ func TestEvaluator(t *testing.T) {
 		},
 
 		{
-			input: `print("hello world");`,
+			input:    `print("hello world");`,
 			want_str: "hello world",
-			id: 25,
+			id:       25,
 		},
 
 		{
-			input: `println("hello " + 2);`,
+			input:    `println("hello " + 2);`,
 			want_str: "hello 2\n",
-			id: 26,
+			id:       26,
 		},
 
 		{
-			input: `println(true);`,
+			input:    `println(true);`,
 			want_str: "true\n",
-			id: 27,
+			id:       27,
 		},
 
 		{
-			input: `let x = input("Enter your name: ");`,
+			input:     `let x = input("Enter your name: ");`,
 			enter_str: "Chase",
 			output: map[string]ast.Node{
 				"x": &ast.StringLiteralNode{Value: "Chase"},
@@ -295,9 +295,9 @@ func TestEvaluator(t *testing.T) {
 				"st": &ast.StringLiteralNode{Value: "1"},
 			},
 			want_str: "12",
-			id: 29,
+			id:       29,
 		},
-		
+
 		{
 			input: `let i = int("42"); let d = i * 6;`,
 			output: map[string]ast.Node{
@@ -314,7 +314,7 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 31,
 		},
-		
+
 		{
 			input: "let x = 0; while x < 10{x++;}",
 			output: map[string]ast.Node{
@@ -337,7 +337,14 @@ func TestEvaluator(t *testing.T) {
 				"x": &ast.IntLiteralNode{Value: 10},
 			},
 			want_str: "bye\n",
-			id: 34,
+			id:       34,
+		},
+
+		{
+			input: "let x = 3.1415",
+			output: map[string]ast.Node{
+				"x": &ast.FloatLiteralNode{Value: 3.1415},
+			},
 		},
 	}
 
@@ -355,7 +362,6 @@ func TestEvaluator(t *testing.T) {
 			os.Stdin = r
 			defer func() { os.Stdin = oldStdin }()
 		}
-
 
 		if tt.output != nil {
 			compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)

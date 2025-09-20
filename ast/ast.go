@@ -37,6 +37,7 @@ const (
 	IntLiteral
 	BoolLiteral
 	StringLiteral
+	FloatLiteral
 
 	//Statements
 	IfStmt
@@ -84,6 +85,8 @@ func (n AstNode) String() string {
 		return "CONTINUE_STMT"
 	case BreakSmt:
 		return "BREAK_STMT"
+	case FloatLiteral:
+		return "FLOAT_LITERAL"
 	default:
 		return "ILLEGAL"
 	}
@@ -332,14 +335,15 @@ func (n *CallBuiltinNode) String() string {
 	return fmt.Sprintf("BUILTIN_FN_%v(%+v)\n", n.Name, n.Params)
 }
 
-type WhileStmtNode struct{
+type WhileStmtNode struct {
 	Cond Bool
 	Body []Node
 }
-func (n *WhileStmtNode)NodeType() AstNode{
-	return WhileStmt;
+
+func (n *WhileStmtNode) NodeType() AstNode {
+	return WhileStmt
 }
-func (n *WhileStmtNode)String() string{
+func (n *WhileStmtNode) String() string {
 	var str string = fmt.Sprintf("while %v {\n", n.Cond)
 	for _, val := range n.Body {
 		str += fmt.Sprintf("\t%v\n", val)
@@ -349,17 +353,29 @@ func (n *WhileStmtNode)String() string{
 }
 
 type BreakStmtNode struct{}
-func (n *BreakStmtNode)NodeType() AstNode{
+
+func (n *BreakStmtNode) NodeType() AstNode {
 	return BreakSmt
 }
-func (n *BreakStmtNode)String() string{
+func (n *BreakStmtNode) String() string {
 	return "BREAK"
 }
 
 type ContinueStmtNode struct{}
-func (n *ContinueStmtNode)NodeType() AstNode{
-	return ContinueStmt;
+
+func (n *ContinueStmtNode) NodeType() AstNode {
+	return ContinueStmt
 }
-func (n *ContinueStmtNode)String()string{
-	return "CONTINUE";
+func (n *ContinueStmtNode) String() string {
+	return "CONTINUE"
+}
+
+type FloatLiteralNode struct{
+	Value float64
+}
+func (n *FloatLiteralNode)NodeType() AstNode{
+	return FloatLiteral;
+}
+func (n *FloatLiteralNode)String() string{
+	return fmt.Sprintf("FLOAT(%g)", n.Value);
 }

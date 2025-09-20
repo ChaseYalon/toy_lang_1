@@ -111,6 +111,12 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			return &ast.BoolLiteralNode{Value: val}
 		case token.STRING:
 			return &ast.StringLiteralNode{Value: tok.Literal}
+		case token.FLOAT:
+			val, err := strconv.ParseFloat(tok.Literal, 64)
+			if err != nil{
+				panic(fmt.Sprintf("[ERROR] Could not convert to floating point, got %v\n", val));
+			}
+			return &ast.FloatLiteralNode{Value: val}
 		case token.VAR_REF:
 			if len(tokens) != 1 {
 				if tokens[1].TokType == token.LPAREN {
@@ -320,9 +326,9 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
 }
 
-func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode{
-	if toks[0].TokType != token.WHILE{
-		panic(fmt.Sprintf("[ERROR] Expected \"WHILE\" got %v\n", toks[0]));
+func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode {
+	if toks[0].TokType != token.WHILE {
+		panic(fmt.Sprintf("[ERROR] Expected \"WHILE\" got %v\n", toks[0]))
 	}
 	// Calculate condition
 	var condToks []token.Token
@@ -388,7 +394,7 @@ func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode{
 			Body: parsedStmts,
 		}
 	}
-	panic(fmt.Sprintf("[ERROR] Could not parse while statement, tokens are %+v\n, cond types are %v\n", toks, cond.NodeType()));
+	panic(fmt.Sprintf("[ERROR] Could not parse while statement, tokens are %+v\n, cond types are %v\n", toks, cond.NodeType()))
 }
 func (p *Parser) parseElseStmt(toks []token.Token) {
 	// Semantic checks
@@ -444,10 +450,10 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 		if firstTok.TokType == token.RBRACE || firstTok.TokType == token.LBRACE || firstTok.TokType == token.SEMICOLON {
 			return nil
 		}
-		if firstTok.TokType == token.CONTINUE{
-			return &ast.ContinueStmtNode{};
+		if firstTok.TokType == token.CONTINUE {
+			return &ast.ContinueStmtNode{}
 		}
-		if firstTok.TokType == token.BREAK{
+		if firstTok.TokType == token.BREAK {
 			return &ast.BreakStmtNode{}
 		}
 		// For single-token lines, let parseExpression handle literals and var refs.
@@ -473,14 +479,14 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 	if firstTok.TokType == token.RETURN {
 		return p.parseReturnExpr(line)
 	}
-	if firstTok.TokType == token.WHILE{
-		return p.parseWhileStmt(line);
+	if firstTok.TokType == token.WHILE {
+		return p.parseWhileStmt(line)
 	}
-	if firstTok.TokType == token.CONTINUE{
+	if firstTok.TokType == token.CONTINUE {
 		return &ast.ContinueStmtNode{}
 	}
-	if firstTok.TokType == token.BREAK{
-		return &ast.BreakStmtNode{};
+	if firstTok.TokType == token.BREAK {
+		return &ast.BreakStmtNode{}
 	}
 	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)

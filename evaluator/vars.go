@@ -32,6 +32,8 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
+	case *ast.FloatLiteralNode:
+		valNode = v;
 	case *ast.ReferenceExprNode:
 		refVal, ok := local_scope.getVar(v.Name)
 		if !ok {

@@ -5,15 +5,16 @@ import (
 	"toy_lang/ast"
 	"toy_lang/token"
 )
+
 func intPow(x, y int) int {
-    if y < 0 {
-        panic("negative exponent not supported for integers")
-    }
-    result := 1
-    for i := 0; i < y; i++ {
-        result *= x
-    }
-    return result
+	if y < 0 {
+		panic("negative exponent not supported for integers")
+	}
+	result := 1
+	for i := 0; i < y; i++ {
+		result *= x
+	}
+	return result
 }
 func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 	var node ast.Node = inode
@@ -56,9 +57,9 @@ func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 		case token.DIVIDE:
 			return i.execIntExpr(node.Left, local_scope) / i.execIntExpr(node.Right, local_scope)
 		case token.MODULO:
-			return i.execIntExpr(node.Left, local_scope) % i.execIntExpr(node.Right, local_scope);
+			return i.execIntExpr(node.Left, local_scope) % i.execIntExpr(node.Right, local_scope)
 		case token.EXPONENT:
-			return intPow(i.execIntExpr(node.Left, local_scope), i.execIntExpr(node.Right, local_scope));
+			return intPow(i.execIntExpr(node.Left, local_scope), i.execIntExpr(node.Right, local_scope))
 		}
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown int expression: %v", node))
@@ -158,27 +159,27 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	if node.NodeType() == ast.CallBuiltin {
 		res := i.callBuiltin(node, local_scope)
-		if res.NodeType() == ast.BoolLiteral{
+		if res.NodeType() == ast.BoolLiteral {
 
-			bres, ok := res.(*ast.BoolLiteralNode);
-			if !ok{
-				panic(fmt.Sprintf("[ERROR] Expected bool return, got %v\n", res));
+			bres, ok := res.(*ast.BoolLiteralNode)
+			if !ok {
+				panic(fmt.Sprintf("[ERROR] Expected bool return, got %v\n", res))
 			}
-			return bres 
+			return bres
 		}
-		if res.NodeType() == ast.IntLiteral{
-			ires, ok := res.(*ast.IntLiteralNode);
-			if !ok{
-				panic(fmt.Sprintf("[ERROR] Expected int return, got %v\n", res));
+		if res.NodeType() == ast.IntLiteral {
+			ires, ok := res.(*ast.IntLiteralNode)
+			if !ok {
+				panic(fmt.Sprintf("[ERROR] Expected int return, got %v\n", res))
 			}
-			return ires 
+			return ires
 		}
-		if res.NodeType() == ast.StringLiteral{
-			sres, ok := res.(*ast.StringLiteralNode);
-			if !ok{
-				panic(fmt.Sprintf("[ERROR] Expected string return, got %v\n", res));
+		if res.NodeType() == ast.StringLiteral {
+			sres, ok := res.(*ast.StringLiteralNode)
+			if !ok {
+				panic(fmt.Sprintf("[ERROR] Expected string return, got %v\n", res))
 			}
-			return sres 
+			return sres
 		}
 	}
 
@@ -209,10 +210,10 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		}
 		return local_var
 	}
-	if node.NodeType() == ast.CallBuiltin{
-		res := i.callBuiltin(node, local_scope);
+	if node.NodeType() == ast.CallBuiltin {
+		res := i.callBuiltin(node, local_scope)
 
-		return res;
+		return res
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }
