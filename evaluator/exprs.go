@@ -136,13 +136,18 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	if node.NodeType() == ast.InfixExpr {
 		infixNode, ok := node.(*ast.InfixExprNode)
 		if ok && infixNode.Operator == token.PLUS {
-			// Check if either operand is a string
 			if i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope) {
 				return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
 			}
+			return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 		}
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
+	if node.NodeType() == ast.CallBuiltin {
+		res := i.callBuiltin(node, local_scope)
+		return &res // ensure you return a pointer to ast.StringLiteralNode
+	}
+
 	if node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix || node.NodeType() == ast.PrefixExpr {
 		return &ast.BoolLiteralNode{Value: i.execBoolExpr(node, local_scope)}
 	}

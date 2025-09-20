@@ -8,6 +8,15 @@ import (
 )
 
 func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
+	if node.NodeType() == ast.CallBuiltin {
+		callNode, ok := node.(*ast.CallBuiltinNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to CallBuiltinNode, got %v\n", node))
+		}
+		res := i.callBuiltin(callNode, local_scope)
+		return res.Value
+	}
+
 	if node.NodeType() == ast.StringLiteral {
 		strNode, ok := node.(*ast.StringLiteralNode)
 		if !ok {
@@ -79,6 +88,7 @@ func (i *Interpreter) isStringExpression(node ast.Node, local_scope *Scope) bool
 			return false
 		}
 		return i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope)
+	
 	case ast.FuncCall:
 		//THIS IS TEMPORARY PLACEHOLDER CODE!!!!!!!
 		return true

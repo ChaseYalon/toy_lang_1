@@ -23,6 +23,7 @@ func (v v_map) String() string {
 
 type Interpreter struct {
 	MainScope Scope
+	reader    *bufio.Reader
 }
 
 func NewInterpreter() Interpreter {
@@ -30,22 +31,36 @@ func NewInterpreter() Interpreter {
 		Vars:  make(v_map),
 		Funcs: make(f_map),
 	}
-	ms.Funcs["print"] = ast.FuncDecNode{
+	i := Interpreter{
+		MainScope: ms,
+		reader:    bufio.NewReader(os.Stdin),
+	}
+
+	// Builtin: print
+	i.MainScope.Funcs["print"] = ast.FuncDecNode{
 		Name:   "print",
-		Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "input"}},
-		Body: []ast.Node{&ast.CallBuiltinNode{
-			Name:   "print",
-			Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
-		}},
+		Params: []ast.ReferenceExprNode{{Name: "input"}},
+		Body: []ast.Node{
+			&ast.CallBuiltinNode{
+				Name:   "print",
+				Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
+			},
+		},
 	}
-	ms.Funcs["println"] = ast.FuncDecNode{
+
+	// Builtin: println
+	i.MainScope.Funcs["println"] = ast.FuncDecNode{
 		Name:   "println",
-		Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "input"}},
-		Body: []ast.Node{&ast.CallBuiltinNode{
-			Name:   "println",
-			Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
-		}},
+		Params: []ast.ReferenceExprNode{{Name: "input"}},
+		Body: []ast.Node{
+			&ast.CallBuiltinNode{
+				Name:   "println",
+				Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
+			},
+		},
 	}
+
+	// Builtin: input
 	ms.Funcs["input"] = ast.FuncDecNode{
 		Name:   "input",
 		Params: []ast.ReferenceExprNode{{Name: "prompt"}},
@@ -59,10 +74,7 @@ func NewInterpreter() Interpreter {
 		},
 	}
 
-
-	return Interpreter{
-		MainScope: ms,
-	}
+	return i
 }
 
 func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
@@ -113,16 +125,15 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 
 func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.StringLiteralNode {
 	node := inode.(*ast.CallBuiltinNode)
-	if node.Name == "print" || node.Name == "println" {
 
+	switch node.Name {
+	case "print", "println":
 		if len(node.Params) != 1 {
 			panic(fmt.Sprintf("[ERROR] Builtin %s must be called with 1 argument, got %v", node.Name, node))
 		}
-
 		val := i.execExpr(node.Params[0], local_scope)
 
 		var output string
-
 		switch v := val.(type) {
 		case *ast.StringLiteralNode:
 			output = v.Value
@@ -134,27 +145,30 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.String
 			panic(fmt.Sprintf("[ERROR] Cannot print value of type %v", val))
 		}
 
-		// Handle print vs println
 		if node.Name == "print" {
 			fmt.Print(output)
-		} else if node.Name == "println" {
+		} else {
 			fmt.Println(output)
 		}
 		return ast.StringLiteralNode{Value: ""}
-	}
-	if node.Name == "input" {
-		node := inode.(*ast.CallBuiltinNode)
-		node.Name = "print"
-		i.callBuiltin(node, local_scope)
+
+	case "input":
+		// print prompt first
+		promptNode := &ast.CallBuiltinNode{Name: "print", Params: []ast.Node{node.Params[0]}}
+		i.callBuiltin(promptNode, local_scope)
+
 		reader := bufio.NewReader(os.Stdin)
 		text, err := reader.ReadString('\n')
 		if err != nil {
 			panic(fmt.Sprintf("[ERROR] Could not read input: %v", err))
 		}
+		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
 		return ast.StringLiteralNode{Value: text}
+
 	}
-	panic(fmt.Sprintf("[ERROR] Could not find builtin function %v\n", inode))
+
+	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", node))
 }
 
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
