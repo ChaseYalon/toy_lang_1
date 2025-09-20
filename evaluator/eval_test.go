@@ -54,11 +54,11 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 }
 
 type tEvalRes struct {
-	input     string
-	output    map[string]ast.Node
-	want_str  string
+	input string
+	output map[string]ast.Node
+	want_str string
 	enter_str string
-	id        int
+	id int
 }
 
 func TestEvaluator(t *testing.T) {
@@ -263,30 +263,56 @@ func TestEvaluator(t *testing.T) {
 		},
 
 		{
-			input:    `print("hello world");`,
+			input: `print("hello world");`,
 			want_str: "hello world",
-			id:       25,
+			id: 25,
 		},
 
 		{
-			input:    `println("hello " + 2);`,
+			input: `println("hello " + 2);`,
 			want_str: "hello 2\n",
-			id:       26,
+			id: 26,
 		},
 
 		{
-			input:    `println(true);`,
+			input: `println(true);`,
 			want_str: "true\n",
-			id:       27,
+			id: 27,
 		},
 
 		{
-			input:     `let x = input("Enter your name: ");`,
+			input: `let x = input("Enter your name: ");`,
 			enter_str: "Chase",
 			output: map[string]ast.Node{
 				"x": &ast.StringLiteralNode{Value: "Chase"},
 			},
 			id: 28,
+		},
+
+		{
+			input: `let st = str(1); print(st + 2);`,
+			output: map[string]ast.Node{
+				"st": &ast.StringLiteralNode{Value: "1"},
+			},
+			want_str: "12",
+			id: 29,
+		},
+		
+		{
+			input: `let i = int("42"); let d = i * 6;`,
+			output: map[string]ast.Node{
+				"i": &ast.IntLiteralNode{Value: 42},
+				"d": &ast.IntLiteralNode{Value: 42 * 6}, //To lazy to open a calculator
+			},
+			id: 30,
+		},
+
+		{
+			input: `let x = !true || bool("false");`,
+			output: map[string]ast.Node{
+				"x": &ast.BoolLiteralNode{Value: false},
+			},
+			id: 31,
 		},
 	}
 
@@ -296,9 +322,8 @@ func TestEvaluator(t *testing.T) {
 		exec := NewInterpreter()
 		program := parse.Parse(lex.Lex(tt.input))
 
-		var oldStdin *os.File
 		if tt.enter_str != "" {
-			oldStdin = os.Stdin
+			oldStdin := os.Stdin
 			r, w, _ := os.Pipe()
 			w.WriteString(tt.enter_str + "\n")
 			w.Close()
@@ -309,7 +334,8 @@ func TestEvaluator(t *testing.T) {
 
 		if tt.output != nil {
 			compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)
-		} else {
+		}
+		if tt.want_str != "" {
 			out := captureOutput(func() {
 				exec.Execute(program, false)
 			})

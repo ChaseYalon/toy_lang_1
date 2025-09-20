@@ -145,7 +145,28 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	if node.NodeType() == ast.CallBuiltin {
 		res := i.callBuiltin(node, local_scope)
-		return &res // ensure you return a pointer to ast.StringLiteralNode
+		if res.NodeType() == ast.BoolLiteral{
+
+			bres, ok := res.(*ast.BoolLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Expected bool return, got %v\n", res));
+			}
+			return bres 
+		}
+		if res.NodeType() == ast.IntLiteral{
+			ires, ok := res.(*ast.IntLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Expected int return, got %v\n", res));
+			}
+			return ires 
+		}
+		if res.NodeType() == ast.StringLiteral{
+			sres, ok := res.(*ast.StringLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Expected string return, got %v\n", res));
+			}
+			return sres 
+		}
 	}
 
 	if node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix || node.NodeType() == ast.PrefixExpr {
@@ -177,7 +198,8 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	if node.NodeType() == ast.CallBuiltin{
 		res := i.callBuiltin(node, local_scope);
-		return &res;
+
+		return res;
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }

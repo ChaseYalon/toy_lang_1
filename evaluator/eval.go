@@ -36,7 +36,6 @@ func NewInterpreter() Interpreter {
 		reader:    bufio.NewReader(os.Stdin),
 	}
 
-	// Builtin: print
 	i.MainScope.Funcs["print"] = ast.FuncDecNode{
 		Name:   "print",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
@@ -48,7 +47,6 @@ func NewInterpreter() Interpreter {
 		},
 	}
 
-	// Builtin: println
 	i.MainScope.Funcs["println"] = ast.FuncDecNode{
 		Name:   "println",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
@@ -60,7 +58,6 @@ func NewInterpreter() Interpreter {
 		},
 	}
 
-	// Builtin: input
 	ms.Funcs["input"] = ast.FuncDecNode{
 		Name:   "input",
 		Params: []ast.ReferenceExprNode{{Name: "prompt"}},
@@ -74,6 +71,45 @@ func NewInterpreter() Interpreter {
 		},
 	}
 
+	ms.Funcs["int"] = ast.FuncDecNode{
+		Name: "int",
+		Params: []ast.ReferenceExprNode{{Name: "convertToInt"}},
+		Body: []ast.Node{
+			&ast.ReturnExprNode{
+				Val: &ast.CallBuiltinNode{
+					Name: "int",
+					Params: []ast.Node{&ast.ReferenceExprNode{Name: "convertToInt"}},
+				},
+			},
+		},
+	}
+
+	ms.Funcs["bool"] = ast.FuncDecNode{
+		Name: "bool",
+		Params: []ast.ReferenceExprNode{{Name: "convertToBool"}},
+		Body: []ast.Node{
+			&ast.ReturnExprNode{
+				Val: &ast.CallBuiltinNode{
+					Name: "bool",
+					Params: []ast.Node{&ast.ReferenceExprNode{Name: "convertToBool"}},
+				},
+			},
+		},
+	}
+
+	
+	ms.Funcs["str"] = ast.FuncDecNode{
+		Name: "str",
+		Params: []ast.ReferenceExprNode{{Name: "convertToStr"}},
+		Body: []ast.Node{
+			&ast.ReturnExprNode{
+				Val: &ast.CallBuiltinNode{
+					Name: "str",
+					Params: []ast.Node{&ast.ReferenceExprNode{Name: "convertToStr"}},
+				},
+			},
+		},
+	}
 	return i
 }
 
@@ -123,7 +159,7 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 	return nil
 }
 
-func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.StringLiteralNode {
+func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
 	node := inode.(*ast.CallBuiltinNode)
 
 	switch node.Name {
@@ -150,7 +186,7 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.String
 		} else {
 			fmt.Println(output)
 		}
-		return ast.StringLiteralNode{Value: ""}
+		return &ast.StringLiteralNode{Value: ""}
 
 	case "input":
 		// print prompt first
@@ -164,9 +200,82 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.String
 		}
 		text = strings.TrimSuffix(text, "\r\n")
 		text = strings.TrimSuffix(text, "\n")
-		return ast.StringLiteralNode{Value: text}
-
+		return &ast.StringLiteralNode{Value: text}
+	case "str":
+		toConv := i.execExpr(node.Params[0], local_scope)
+		if toConv.NodeType() == ast.StringLiteral{
+			return toConv;
+		}
+		if toConv.NodeType() == ast.BoolLiteral{
+			toConvB, ok := toConv.(*ast.BoolLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to string, got %v\n", node));
+			}
+			res := strconv.FormatBool(toConvB.Value);
+			return &ast.StringLiteralNode{Value: res}
+		}
+		if toConv.NodeType() == ast.IntLiteral{
+			toConvI, ok := toConv.(*ast.IntLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert int literal to string, got %v\n", node));
+			}
+			res := strconv.Itoa(toConvI.Value);
+			return &ast.StringLiteralNode{Value: res}
+		}
+	
+		panic(fmt.Sprintf("[ERROR] Could not convert type %v to string", node.NodeType()));
+	case "int":
+		toConv := i.execExpr(node.Params[0], local_scope)
+		if toConv.NodeType() == ast.IntLiteral{
+			return toConv;
+		}
+		if toConv.NodeType() == ast.BoolLiteral{
+			toConvB, ok := toConv.(*ast.BoolLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to int, got %v\n", node));
+			}
+			res := func() int {
+				if toConvB.Value { return 1 };return 0}()			
+			return &ast.IntLiteralNode{Value: res}
+		}
+		if toConv.NodeType() == ast.StringLiteral{
+			toConvS, ok := toConv.(*ast.StringLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert string literal to int, got %v\n", node));
+			}
+			res, err:= strconv.Atoi(toConvS.Value);
+			if err != nil{
+				panic(fmt.Sprintf("Got following error converting from str to int, %v", err));
+			}
+			return &ast.IntLiteralNode{Value: res}
+		}
+	case "bool":
+		toConv := i.execExpr(node.Params[0], local_scope)
+		if toConv.NodeType() == ast.BoolLiteral{
+			return toConv;
+		}
+		if toConv.NodeType() == ast.IntLiteral{
+			toConvI, ok := toConv.(*ast.IntLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to int, got %v\n", node));
+			}
+			res := func() bool {return toConvI.Value > 0}()			
+			return &ast.BoolLiteralNode{Value: res}
+		}
+		if toConv.NodeType() == ast.StringLiteral{
+			toConvS, ok := toConv.(*ast.StringLiteralNode);
+			if !ok{
+				panic(fmt.Sprintf("[ERROR] Could not convert string literal to int, got %v\n", node));
+			}
+			if toConvS.Value == "" || toConvS.Value == "false" {
+				return &ast.BoolLiteralNode{Value: false}
+			}
+			return &ast.BoolLiteralNode{Value: true}
+		}
+	
+		panic(fmt.Sprintf("[ERROR] Could not convert type %v to string", node.NodeType()));
 	}
+
 
 	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", node))
 }

@@ -14,7 +14,11 @@ func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
 			panic(fmt.Sprintf("[ERROR] Could not convert node to CallBuiltinNode, got %v\n", node))
 		}
 		res := i.callBuiltin(callNode, local_scope)
-		return res.Value
+		sres, ok := res.(*ast.StringLiteralNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Could not convert %v to string\n", res));
+		}
+		return sres.Value
 	}
 
 	if node.NodeType() == ast.StringLiteral {

@@ -30,7 +30,10 @@ Roadmap:
 7. Builtin functions
     a. Print --Done
     b. Print --Done
-    c. Input
+    c. Input --Done
+    d. Int
+    e. Bool
+    f. Str
 8. While loops
 9. Floating points
 10. User defined data types (structs/classes)

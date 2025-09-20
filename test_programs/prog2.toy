@@ -1,0 +1,19 @@
+fn add(a, b){
+    return a + b;
+}
+fn subtract(a, b){
+    return a - b;
+}
+
+let uIn = input("Enter add or subtract: ");
+let int1 = int(input("Enter an int: "));
+let int2 = int(input("Enter an int: "));
+if uIn == "add"{
+    println(add(int1, int2));
+} else{
+    if uIn == "subtract"{
+        println(subtract(int1, int2));
+    }else{
+        println("INVALID INPUT");
+    }
+}
