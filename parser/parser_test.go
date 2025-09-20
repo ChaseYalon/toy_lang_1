@@ -976,6 +976,54 @@ func TestParser(t *testing.T) {
 			},
 			id: 27,
 		},
+		{
+			input: `if "a" < "b"{let h = "hi";}`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left:     &ast.StringLiteralNode{Value: "a"},
+							Operator: token.LESS_THAN,
+							Right:    &ast.StringLiteralNode{Value: "b"},
+						},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "h",
+								Value: &ast.StringLiteralNode{Value: "hi"},
+							},
+						},
+					},
+				},
+			},
+			id: 28,
+		},
+		{
+			input: `if "hello" == "world"{let val = true;} else {let val = false;}`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left:     &ast.StringLiteralNode{Value: "hello"},
+							Operator: token.EQUALS,
+							Right:    &ast.StringLiteralNode{Value: "world"},
+						},
+						Body: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "val",
+								Value: &ast.BoolLiteralNode{Value: true},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.LetStmtNode{
+								Name:  "val",
+								Value: &ast.BoolLiteralNode{Value: false},
+							},
+						},
+					},
+				},
+			},
+			id: 29,
+		},
 	}
 
 	for _, tt := range tests {

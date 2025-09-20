@@ -212,6 +212,13 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 23,
 		},
+		{
+			input: `fn hello(){return "hello";}let x = ""; if hello() == "hello"{x = "equals";} else {x = "not equals";}`,
+			output: map[string]ast.Node{
+				"x": &ast.StringLiteralNode{Value: "equals"},
+			},
+			id: 24,
+		},
 	}
 
 	for _, tt := range tests {

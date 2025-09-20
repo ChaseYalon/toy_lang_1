@@ -183,6 +183,33 @@ func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 			return i.execIntExpr(node.Left, local_scope) > i.execIntExpr(node.Right, local_scope)
 		case token.GREATER_THAN_EQT:
 			return i.execIntExpr(node.Left, local_scope) >= i.execIntExpr(node.Right, local_scope)
+		case token.EQUALS:
+			leftVal := i.execExpr(node.Left, local_scope)
+			rightVal := i.execExpr(node.Right, local_scope)
+
+			switch l := leftVal.(type) {
+			case *ast.IntLiteralNode:
+				r, ok := rightVal.(*ast.IntLiteralNode)
+				if !ok {
+					return false
+				}
+				return l.Value == r.Value
+			case *ast.BoolLiteralNode:
+				r, ok := rightVal.(*ast.BoolLiteralNode)
+				if !ok {
+					return false
+				}
+				return l.Value == r.Value
+			case *ast.StringLiteralNode:
+				r, ok := rightVal.(*ast.StringLiteralNode)
+				if !ok {
+					return false
+				}
+				return l.Value == r.Value
+			default:
+				return false
+			}
+
 		}
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown bool expression: %v", node))
@@ -399,7 +426,6 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
 	if node.NodeType() == ast.InfixExpr {
-		// Check if this is a string operation by examining the operands
 		infixNode, ok := node.(*ast.InfixExprNode)
 		if ok && infixNode.Operator == token.PLUS {
 			// Check if either operand is a string
@@ -417,6 +443,13 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	}
 	if node.NodeType() == ast.StringLiteral {
 		return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
+	}
+	if node.NodeType() == ast.EmptyExpr {
+		emptExpr, ok := node.(*ast.EmptyExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not parse empty node, got %v\n", node))
+		}
+		return i.execExpr(emptExpr.Child, local_scope)
 	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }

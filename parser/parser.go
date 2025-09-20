@@ -110,7 +110,6 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			val, _ := strconv.ParseBool(tok.Literal)
 			return &ast.BoolLiteralNode{Value: val}
 		case token.STRING:
-			fmt.Printf("In string literal, got %v\n", tokens)
 			return &ast.StringLiteralNode{Value: tok.Literal}
 		case token.VAR_REF:
 			if len(tokens) != 1 {
@@ -128,7 +127,6 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
 		}
 	}
-
 	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
 	if lowestIndex == -1 {
 		var leftSubNodes []*ast.EmptyExprNode
@@ -170,8 +168,10 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 	}
 
 	switch lowestTok.TokType {
-	case token.AND, token.OR, token.LESS_THAN, token.LESS_THAN_EQT,
-		token.GREATER_THAN, token.GREATER_THAN_EQT:
+	case token.AND, token.OR,
+		token.LESS_THAN, token.LESS_THAN_EQT,
+		token.GREATER_THAN, token.GREATER_THAN_EQT,
+		token.EQUALS:
 		leftSubNodes := sliceSubNodes(0, lowestIndex)
 		rightSubNodes := sliceSubNodes(lowestIndex+1, len(tokens))
 
@@ -195,7 +195,6 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 
 		left := p.parseSubExpression(tokens[:lowestIndex], leftSubNodes)
 		right := p.parseSubExpression(tokens[lowestIndex+1:], rightSubNodes)
-		fmt.Printf("In parse sub expr default branch, input: %v, left: %v, right: %v\n", tokens, left, right)
 		return &ast.InfixExprNode{
 			Left:     left,
 			Operator: lowestTok.TokType,

@@ -21,6 +21,7 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.LESS_THAN_EQT:    3,
 		token.GREATER_THAN:     3,
 		token.GREATER_THAN_EQT: 3,
+		token.EQUALS:           3,
 	}
 }
 

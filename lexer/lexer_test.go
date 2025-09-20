@@ -587,6 +587,23 @@ func TestLexer(t *testing.T) {
 			},
 			id: 24,
 		},
+		{
+			input: `if "a" < "b"{let x = "hi";}`,
+			output: []token.Token{
+				*token.NewToken(token.IF, "if"),
+				*token.NewToken(token.STRING, "a"),
+				*token.NewToken(token.LESS_THAN, "<"),
+				*token.NewToken(token.STRING, "b"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.STRING, "hi"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+			id: 25,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)
