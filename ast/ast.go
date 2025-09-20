@@ -313,13 +313,14 @@ func (n *StringLiteralNode) String() string {
 	return fmt.Sprintf("STRING(%v)", n.Value)
 }
 
-type CallBuiltinNode struct{
-	Name string
+type CallBuiltinNode struct {
+	Name   string
 	Params []Node
 }
-func (n *CallBuiltinNode)NodeType() AstNode{
+
+func (n *CallBuiltinNode) NodeType() AstNode {
 	return CallBuiltin
 }
-func (n *CallBuiltinNode)String()string{
-	return fmt.Sprintf("BUILTIN_FN_%v(%+v)\n", n.Name, n.Params);
+func (n *CallBuiltinNode) String() string {
+	return fmt.Sprintf("BUILTIN_FN_%v(%+v)\n", n.Name, n.Params)
 }

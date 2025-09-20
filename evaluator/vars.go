@@ -1,9 +1,9 @@
-package evaluator;
+package evaluator
 
 import (
+	"fmt"
 	"toy_lang/ast"
 	"toy_lang/token"
-	"fmt"
 )
 
 func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scope, isDeclaration bool) {
@@ -67,7 +67,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}
-	AfterStringParse:
+AfterStringParse:
 	if valNode == nil {
 		panic(fmt.Sprintf("[ERROR] Variable is undefined, %v\n", name))
 	}

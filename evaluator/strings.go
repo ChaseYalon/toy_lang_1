@@ -1,8 +1,10 @@
-package evaluator;
+package evaluator
+
 import (
+	"fmt"
+	"strconv"
 	"toy_lang/ast"
 	"toy_lang/token"
-	"fmt"
 )
 
 func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
@@ -38,7 +40,23 @@ func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
 		}
 		return strNode.Value
 	}
-	panic(fmt.Sprintf("[ERROR] Type unsupported for string operations, got %v\n", node.NodeType()))
+	if node.NodeType() == ast.IntLiteral {
+		refNode, ok := node.(*ast.IntLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to reference expression, got %v\n", node))
+		}
+		str := strconv.Itoa(refNode.Value)
+		return str
+	}
+	if node.NodeType() == ast.BoolLiteral {
+		refNode, ok := node.(*ast.BoolLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to reference expression, got %v\n", node))
+		}
+		str := strconv.FormatBool(refNode.Value)
+		return str
+	}
+	panic(fmt.Sprintf("[ERROR] Type unsupported for string operations, got %v of value %v\n", node.NodeType(), node))
 }
 
 func (i *Interpreter) isStringExpression(node ast.Node, local_scope *Scope) bool {

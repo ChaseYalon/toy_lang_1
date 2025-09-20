@@ -626,7 +626,7 @@ func TestLexer(t *testing.T) {
 				*token.NewToken(token.SEMICOLON, ";"),
 				*token.NewToken(token.LET, "let"),
 				*token.NewToken(token.VAR_NAME, "x2"),
-				*token.NewToken(token.ASSIGN ,"="),
+				*token.NewToken(token.ASSIGN, "="),
 				*token.NewToken(token.INTEGER, "2"),
 				*token.NewToken(token.SEMICOLON, ";"),
 			},

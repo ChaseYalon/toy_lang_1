@@ -66,7 +66,6 @@ func (l *Lexer) flushStr() {
 	}
 }
 
-
 func (l *Lexer) eat() {
 	l.pos++
 }
@@ -232,11 +231,11 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.tokens = append(l.tokens, *token.NewToken(token.OR, "||"))
 			l.eat()
 		case ch == '!':
-			if l.peek(1) == '='{
-				l.flushInt();
-				l.flushStr();
+			if l.peek(1) == '=' {
+				l.flushInt()
+				l.flushStr()
 				l.tokens = append(l.tokens, *token.NewToken(token.NOT_EQUAL, "!="))
-				l.eat();
+				l.eat()
 			} else {
 
 				l.flushInt()

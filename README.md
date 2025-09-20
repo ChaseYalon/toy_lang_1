@@ -28,8 +28,8 @@ Roadmap:
     c. String value comparison with ASCII  --Done
     d. General maintenance (not equals, numbers in var names, refactor) --Done
 7. Builtin functions
-    a. Print
-    b. Println
+    a. Print --Done
+    b. Print --Done
     c. Input
 8. While loops
 9. Floating points

@@ -1,7 +1,8 @@
-package evaluator;
-import(
-	"toy_lang/ast"
+package evaluator
+
+import (
 	"fmt"
+	"toy_lang/ast"
 )
 
 type Scope struct {

@@ -1029,7 +1029,7 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.FuncCallNode{
-						Name: ast.ReferenceExprNode{Name: "print"},
+						Name:   ast.ReferenceExprNode{Name: "print"},
 						Params: []ast.Node{&ast.StringLiteralNode{Value: "hello world"}},
 					},
 				},
