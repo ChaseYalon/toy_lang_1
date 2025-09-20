@@ -18,21 +18,31 @@ type Bool interface {
 }
 
 const (
+	//Main
 	Program AstNode = iota
+
+	//Vars
 	LetStmt
-	InfixExpr
-	IntLiteral
 	ReferenceExpr
 	VarReassign
-	BoolLiteral
+
+	//Exprs
+	InfixExpr
 	BoolInfix
 	PrefixExpr
-	IfStmt
 	EmptyExpr
+	ReturnExpr
+
+	//Datatypes
+	IntLiteral
+	BoolLiteral
+	StringLiteral
+
+	//Statements
+	IfStmt
 	FuncDec
 	FuncCall
-	ReturnExpr
-	StringLiteral
+	CallBuiltin
 )
 
 func (n AstNode) String() string {
@@ -44,7 +54,7 @@ func (n AstNode) String() string {
 	case IntLiteral:
 		return "INTEGER_LITERAL"
 	case ReferenceExpr:
-		return "VAR_REFERENCE"
+		return "REF_EXPR"
 	case VarReassign:
 		return "VAR_REASSIGN"
 	case BoolLiteral:
@@ -65,6 +75,8 @@ func (n AstNode) String() string {
 		return "RETURN_EXPR"
 	case StringLiteral:
 		return "STRING_LITERAL"
+	case CallBuiltin:
+		return "CALL_BUILTIN"
 	default:
 		return "ILLEGAL"
 	}
@@ -299,4 +311,15 @@ func (n *StringLiteralNode) NodeType() AstNode {
 }
 func (n *StringLiteralNode) String() string {
 	return fmt.Sprintf("STRING(%v)", n.Value)
+}
+
+type CallBuiltinNode struct{
+	Name string
+	Params []Node
+}
+func (n *CallBuiltinNode)NodeType() AstNode{
+	return CallBuiltin
+}
+func (n *CallBuiltinNode)String()string{
+	return fmt.Sprintf("BUILTIN_FN_%v(%+v)\n", n.Name, n.Params);
 }

@@ -2,12 +2,27 @@ package evaluator
 
 import (
 	"fmt"
+	"os"
+	"bytes"
 	"testing"
 	"toy_lang/ast"
 	"toy_lang/lexer"
 	"toy_lang/parser"
 )
+func captureOutput(f func()) string {
+	old := os.Stdout // keep backup
+	r, w, _ := os.Pipe()
+	os.Stdout = w
 
+	f() // run the code that prints
+
+	_ = w.Close()
+	os.Stdout = old // restore
+
+	var buf bytes.Buffer
+	_, _ = buf.ReadFrom(r)
+	return buf.String()
+}
 func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node, tt tEvalRes) {
 	var Reset = "\033[0m"
 	var Red = "\033[31m"
@@ -39,6 +54,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 type tEvalRes struct {
 	input  string
 	output map[string]ast.Node
+	want_str string
 	id     int
 }
 
@@ -219,6 +235,11 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 24,
 		},
+		{
+			input: `print("hello world");`,
+			want_str: "hello world",
+			id:     25,
+		},
 	}
 
 	for _, tt := range tests {
@@ -226,6 +247,19 @@ func TestEvaluator(t *testing.T) {
 		parse := parser.NewParser()
 		exec := NewInterpreter()
 		program := parse.Parse(lex.Lex(tt.input))
-		compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)
+
+		if tt.output != nil {
+			compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)
+		} else {
+			out := captureOutput(func() {
+				exec.Execute(program, false)
+			})
+			want := tt.want_str;
+			if out != want {
+				t.Errorf("[FAILURE] Test number %d has failed\nGot: %q\nWant: %q\n", tt.id, out, want)
+			} else {
+				fmt.Printf("\033[32m[PASS] Test number %d has passed\033[0m\n", tt.id)
+			}
+		}
 	}
 }

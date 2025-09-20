@@ -1024,6 +1024,18 @@ func TestParser(t *testing.T) {
 			},
 			id: 29,
 		},
+		{
+			input: `print("hello world");`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncCallNode{
+						Name: ast.ReferenceExprNode{Name: "print"},
+						Params: []ast.Node{&ast.StringLiteralNode{Value: "hello world"}},
+					},
+				},
+			},
+			id: 30,
+		},
 	}
 
 	for _, tt := range tests {

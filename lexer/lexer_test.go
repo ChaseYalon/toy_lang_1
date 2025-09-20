@@ -650,6 +650,17 @@ func TestLexer(t *testing.T) {
 			},
 			id: 28,
 		},
+		{
+			input: `print("hello world");`,
+			output: []token.Token{
+				*token.NewToken(token.VAR_REF, "print"),
+				*token.NewToken(token.LPAREN, "("),
+				*token.NewToken(token.STRING, "hello world"),
+				*token.NewToken(token.RPAREN, ")"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 29,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

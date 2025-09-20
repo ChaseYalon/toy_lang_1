@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"strconv"
 	"toy_lang/ast"
 	"toy_lang/token"
 )
@@ -24,11 +25,28 @@ type Interpreter struct {
 }
 
 func NewInterpreter() Interpreter {
+	ms := Scope {
+		Vars: make(v_map),
+		Funcs: make(f_map),
+	}
+	ms.Funcs["print"] = ast.FuncDecNode{
+		Name: "print",
+		Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "input"}},
+		Body: []ast.Node{&ast.CallBuiltinNode{
+			Name: "print",
+			Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
+		}},
+	}
+	ms.Funcs["println"] = ast.FuncDecNode{
+		Name: "println",
+		Params: []ast.ReferenceExprNode{ast.ReferenceExprNode{Name: "input"}},
+		Body: []ast.Node{&ast.CallBuiltinNode{
+			Name: "println",
+			Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
+		}},
+	}
 	return Interpreter{
-		MainScope: Scope{
-			Vars:  make(v_map),
-			Funcs: make(f_map),
-		},
+		MainScope: ms,
 	}
 }
 
@@ -231,9 +249,61 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		}
 		return i.execExpr(emptExpr.Child, local_scope)
 	}
+	if node.NodeType() == ast.ReferenceExpr{
+		refNode, ok := node.(*ast.ReferenceExprNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Could not convert %v to a variable reference\n", node));
+		}
+		local_var, found := local_scope.getVar(refNode.Name);
+		if !found{
+			panic(fmt.Sprintf("[ERROR] Variable \"%v\" not found in current scope\n", local_var));
+		}
+		return local_var;
+	}
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
 }
+func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) {
+    node, ok := inode.(*ast.CallBuiltinNode)
+    if !ok {
+        panic(fmt.Sprintf("[ERROR] Invalid function call, got %v\n", inode))
+    }
+    if node.Name == "print" {
+        if len(node.Params) != 1 {
+            panic(fmt.Sprintf("[ERROR] Print must be called with 1 argument, got %v\n", node))
+        }
+        expr := i.execExpr(node.Params[0], local_scope)
+        sExpr, ok := expr.(*ast.StringLiteralNode)
+        if !ok {
+            panic(fmt.Sprintf("[ERROR] Could not parse %v into a string\n", expr))
+        }
 
+        // Unescape the string so \n, \t, etc. work
+        unescaped, err := strconv.Unquote(`"` + sExpr.Value + `"`)
+        if err != nil {
+            panic(fmt.Sprintf("[ERROR] Could not unescape string %v: %v", sExpr.Value, err))
+        }
+
+        fmt.Print(unescaped)
+    }
+	if node.Name == "println" {
+        if len(node.Params) != 1 {
+            panic(fmt.Sprintf("[ERROR] Print must be called with 1 argument, got %v\n", node))
+        }
+        expr := i.execExpr(node.Params[0], local_scope)
+        sExpr, ok := expr.(*ast.StringLiteralNode)
+        if !ok {
+            panic(fmt.Sprintf("[ERROR] Could not parse %v into a string\n", expr))
+        }
+
+        // Unescape the string so \n, \t, etc. work
+        unescaped, err := strconv.Unquote(`"` + sExpr.Value + `"`)
+        if err != nil {
+            panic(fmt.Sprintf("[ERROR] Could not unescape string %v: %v", sExpr.Value, err))
+        }
+
+        fmt.Print(unescaped + "\n")
+    }
+}
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	switch node.NodeType() {
 	case ast.IntLiteral, ast.InfixExpr:
@@ -254,8 +324,16 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 		i.execFuncCall(node, local_scope)
 	case ast.StringLiteral:
 		i.execStringExpr(node, local_scope)
+	case ast.CallBuiltin:
+		i.callBuiltin(node, local_scope);
+	case ast.EmptyExpr:
+		emptExpr, ok := node.(*ast.EmptyExprNode);
+		if !ok{
+			panic(fmt.Sprintf("WTF happend here, got %v\n", node));
+		}
+		i.executeStmt(emptExpr.Child, local_scope);
 	default:
-		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v", node))
+		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v, of type %v\n", node, node.NodeType()))
 	}
 }
 

@@ -48,21 +48,24 @@ func (l *Lexer) flushInt() {
 
 func (l *Lexer) flushStr() {
 	if len(l.currString) != 0 {
-		if l.tokens[len(l.tokens)-1].TokType == token.LET {
-			l.tokens = append(l.tokens, *token.NewToken(token.VAR_NAME, string(l.currString)))
-			l.currString = []rune{}
-			return
-		}
-		if l.tokens[len(l.tokens)-1].TokType == token.FN {
-			l.tokens = append(l.tokens, *token.NewToken(token.FUNC_NAME, string(l.currString)))
-			l.currString = []rune{}
-			return
+		if len(l.tokens) > 0 {
+			if l.tokens[len(l.tokens)-1].TokType == token.LET {
+				l.tokens = append(l.tokens, *token.NewToken(token.VAR_NAME, string(l.currString)))
+				l.currString = []rune{}
+				return
+			}
+			if l.tokens[len(l.tokens)-1].TokType == token.FN {
+				l.tokens = append(l.tokens, *token.NewToken(token.FUNC_NAME, string(l.currString)))
+				l.currString = []rune{}
+				return
+			}
 		}
 		l.tokens = append(l.tokens, *token.NewToken(token.VAR_REF, string(l.currString)))
 		l.currString = []rune{}
 		return
 	}
 }
+
 
 func (l *Lexer) eat() {
 	l.pos++
