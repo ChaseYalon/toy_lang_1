@@ -229,9 +229,17 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.tokens = append(l.tokens, *token.NewToken(token.OR, "||"))
 			l.eat()
 		case ch == '!':
-			l.flushInt()
-			l.flushStr()
-			l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"))
+			if l.peek(1) == '='{
+				l.flushInt();
+				l.flushStr();
+				l.tokens = append(l.tokens, *token.NewToken(token.NOT_EQUAL, "!="))
+				l.eat();
+			} else {
+
+				l.flushInt()
+				l.flushStr()
+				l.tokens = append(l.tokens, *token.NewToken(token.NOT, "!"))
+			}
 		case ch == '{':
 			l.flushInt()
 			l.flushStr()
@@ -248,12 +256,17 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.flushInt()
 			l.flushStr()
 			l.tokens = append(l.tokens, *token.NewToken(token.RPAREN, ")"))
-		case unicode.IsLetter(ch):
+		case unicode.IsLetter(ch) || (len(l.currString) > 0 && unicode.IsDigit(ch)):
 			l.flushInt()
 			l.currString = append(l.currString, ch)
-		case '0' <= ch && ch <= '9':
+			l.eat()
+			continue
+		case unicode.IsDigit(ch):
 			l.flushStr()
 			l.currNum = append(l.currNum, ch)
+			l.eat()
+			continue
+
 		default:
 			l.flushInt()
 			l.flushStr()

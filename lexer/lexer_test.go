@@ -604,6 +604,52 @@ func TestLexer(t *testing.T) {
 			},
 			id: 25,
 		},
+		{
+			input: `if 2 != 1{}`,
+			output: []token.Token{
+				*token.NewToken(token.IF, "if"),
+				*token.NewToken(token.INTEGER, "2"),
+				*token.NewToken(token.NOT_EQUAL, "!="),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+			id: 26,
+		},
+		{
+			input: "let x1 = 1; let x2 = 2;",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x1"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x2"),
+				*token.NewToken(token.ASSIGN ,"="),
+				*token.NewToken(token.INTEGER, "2"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 27,
+		},
+		{
+			input: "let x1 = 1; let x2 = x1 * 2;",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x1"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "x2"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.VAR_REF, "x1"),
+				*token.NewToken(token.MULTIPLY, "*"),
+				*token.NewToken(token.INTEGER, "2"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 28,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

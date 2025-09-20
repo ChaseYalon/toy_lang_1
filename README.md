@@ -25,12 +25,12 @@ Roadmap:
 6. Strings
     a. String Literals --Done
     b. String conation --Done
-    c. String value comparison with ASCII 
+    c. String value comparison with ASCII  --Done
+    d. General maintenance (not equals, numbers in var names, refactor) --Done
 7. Builtin functions
     a. Print
     b. Println
     c. Input
-    d. General maintenance (not equals, numbers in var names, refactor)
 8. While loops
 9. Floating points
 10. User defined data types (structs/classes)

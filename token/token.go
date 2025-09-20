@@ -50,6 +50,7 @@ const (
 	GREATER_THAN
 	GREATER_THAN_EQT
 	EQUALS
+	NOT_EQUAL
 	AND
 	OR
 	NOT
@@ -136,6 +137,8 @@ func (t TokenType) String() string {
 		return "COMMA"
 	case STRING:
 		return "STRING"
+	case NOT_EQUAL:
+		return "NOT_EQUAL"
 	default:
 		return "UNKNOWN"
 	}
