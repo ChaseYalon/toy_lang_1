@@ -40,9 +40,12 @@ const (
 
 	//Statements
 	IfStmt
+	WhileStmt
 	FuncDec
 	FuncCall
 	CallBuiltin
+	ContinueStmt
+	BreakSmt
 )
 
 func (n AstNode) String() string {
@@ -77,6 +80,10 @@ func (n AstNode) String() string {
 		return "STRING_LITERAL"
 	case CallBuiltin:
 		return "CALL_BUILTIN"
+	case ContinueStmt:
+		return "CONTINUE_STMT"
+	case BreakSmt:
+		return "BREAK_STMT"
 	default:
 		return "ILLEGAL"
 	}
@@ -323,4 +330,36 @@ func (n *CallBuiltinNode) NodeType() AstNode {
 }
 func (n *CallBuiltinNode) String() string {
 	return fmt.Sprintf("BUILTIN_FN_%v(%+v)\n", n.Name, n.Params)
+}
+
+type WhileStmtNode struct{
+	Cond Bool
+	Body []Node
+}
+func (n *WhileStmtNode)NodeType() AstNode{
+	return WhileStmt;
+}
+func (n *WhileStmtNode)String() string{
+	var str string = fmt.Sprintf("while %v {\n", n.Cond)
+	for _, val := range n.Body {
+		str += fmt.Sprintf("\t%v\n", val)
+	}
+	str += "}"
+	return str
+}
+
+type BreakStmtNode struct{}
+func (n *BreakStmtNode)NodeType() AstNode{
+	return BreakSmt
+}
+func (n *BreakStmtNode)String() string{
+	return "BREAK"
+}
+
+type ContinueStmtNode struct{}
+func (n *ContinueStmtNode)NodeType() AstNode{
+	return ContinueStmt;
+}
+func (n *ContinueStmtNode)String()string{
+	return "CONTINUE";
 }

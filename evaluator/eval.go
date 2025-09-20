@@ -27,16 +27,13 @@ type Interpreter struct {
 }
 
 func NewInterpreter() Interpreter {
-	ms := Scope{
-		Vars:  make(v_map),
+	builtinScope :=Scope{
+		Vars: make(v_map),
 		Funcs: make(f_map),
 	}
-	i := Interpreter{
-		MainScope: ms,
-		reader:    bufio.NewReader(os.Stdin),
-	}
-
-	i.MainScope.Funcs["print"] = ast.FuncDecNode{
+	ms := builtinScope.newChild();
+	
+	builtinScope.Funcs["print"] = ast.FuncDecNode{
 		Name:   "print",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
 		Body: []ast.Node{
@@ -46,8 +43,8 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
-	i.MainScope.Funcs["println"] = ast.FuncDecNode{
+	
+	builtinScope.Funcs["println"] = ast.FuncDecNode{
 		Name:   "println",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
 		Body: []ast.Node{
@@ -57,8 +54,8 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
-	ms.Funcs["input"] = ast.FuncDecNode{
+	
+	builtinScope.Funcs["input"] = ast.FuncDecNode{
 		Name:   "input",
 		Params: []ast.ReferenceExprNode{{Name: "prompt"}},
 		Body: []ast.Node{
@@ -70,8 +67,8 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
-	ms.Funcs["int"] = ast.FuncDecNode{
+	
+	builtinScope.Funcs["int"] = ast.FuncDecNode{
 		Name: "int",
 		Params: []ast.ReferenceExprNode{{Name: "convertToInt"}},
 		Body: []ast.Node{
@@ -83,8 +80,8 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
-	ms.Funcs["bool"] = ast.FuncDecNode{
+	
+	builtinScope.Funcs["bool"] = ast.FuncDecNode{
 		Name: "bool",
 		Params: []ast.ReferenceExprNode{{Name: "convertToBool"}},
 		Body: []ast.Node{
@@ -96,9 +93,9 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	
-	ms.Funcs["str"] = ast.FuncDecNode{
+	
+	builtinScope.Funcs["str"] = ast.FuncDecNode{
 		Name: "str",
 		Params: []ast.ReferenceExprNode{{Name: "convertToStr"}},
 		Body: []ast.Node{
@@ -109,6 +106,10 @@ func NewInterpreter() Interpreter {
 				},
 			},
 		},
+	}
+	i := Interpreter{
+		MainScope: *ms,
+		reader:    bufio.NewReader(os.Stdin),
 	}
 	return i
 }
@@ -158,6 +159,38 @@ func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 
 	return nil
 }
+func (i *Interpreter) execWhileStmt(node ast.Node, local_scope *Scope) {
+	whileStmt := node.(*ast.WhileStmtNode)
+
+	for i.execBoolExpr(whileStmt.Cond, local_scope) {
+		// Create a child scope for the loop body
+		bodyScope := local_scope.newChild()
+
+		skipRest := false
+
+		for _, stmt := range whileStmt.Body {
+			if skipRest {
+				break
+			}
+
+			switch stmt.NodeType() {
+			case ast.BreakSmt:
+				return // exit the while loop entirely
+			case ast.ContinueStmt:
+				skipRest = true // skip remaining statements
+				break
+			default:
+				i.executeStmt(stmt, bodyScope)
+			}
+		}
+
+		// Apply variable changes from bodyScope back to local_scope if needed
+		for k, v := range bodyScope.Vars {
+			local_scope.Vars[k] = v
+		}
+	}
+}
+
 
 func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
 	node := inode.(*ast.CallBuiltinNode)
@@ -308,6 +341,8 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 			panic(fmt.Sprintf("WTF happend here, got %v\n", node))
 		}
 		i.executeStmt(emptExpr.Child, local_scope)
+	case ast.WhileStmt:
+		i.execWhileStmt(node, local_scope);
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v, of type %v\n", node, node.NodeType()))
 	}

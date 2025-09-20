@@ -11,6 +11,8 @@ const (
 	MINUS
 	MULTIPLY
 	DIVIDE
+	MODULO
+	EXPONENT
 
 	//Syntax
 	SEMICOLON
@@ -20,16 +22,20 @@ const (
 	LPAREN
 	RPAREN
 	COMMA
-
-	//Keywords
+	//User names
 	VAR_REF
 	VAR_NAME
+	FUNC_NAME
+
+	//Keywords
 	LET
 	IF
 	ELSE
 	FN
 	RETURN
-	FUNC_NAME
+	WHILE
+	BREAK
+	CONTINUE
 
 	//Compound operators
 	COMPOUND_PLUS
@@ -139,6 +145,16 @@ func (t TokenType) String() string {
 		return "STRING"
 	case NOT_EQUAL:
 		return "NOT_EQUAL"
+	case WHILE:
+		return "WHILE"
+	case BREAK:
+		return "BREAK"
+	case CONTINUE:
+		return "CONTINUE"
+	case MODULO:
+		return "MODULO"
+	case EXPONENT:
+		return "EXPONENT"
 	default:
 		return "UNKNOWN"
 	}

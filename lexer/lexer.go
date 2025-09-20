@@ -124,6 +124,15 @@ func (l *Lexer) Lex(s string) []token.Token {
 		if l.parseKeyword("return", *token.NewToken(token.RETURN, "return")) {
 			continue
 		}
+		if l.parseKeyword("while", *token.NewToken(token.WHILE, "while")){
+			continue
+		}
+		if l.parseKeyword("continue", *token.NewToken(token.CONTINUE, "continue")){
+			continue;
+		}
+		if l.parseKeyword("break", *token.NewToken(token.BREAK, "break")){
+			continue;
+		}
 
 		switch {
 		case ch == ';':
@@ -168,9 +177,16 @@ func (l *Lexer) Lex(s string) []token.Token {
 			if l.peek(1) == '=' {
 				l.tokens = append(l.tokens, *token.NewToken(token.COMPOUND_MULTIPLY, "*="))
 				l.eat()
-			} else {
+			} else if l.peek(1) == '*'{
+				l.tokens = append(l.tokens, *token.NewToken(token.EXPONENT, "*"));
+				l.eat();
+			}else{
 				l.tokens = append(l.tokens, *token.NewToken(token.MULTIPLY, "*"))
 			}
+		case ch == '%':
+			l.flushInt();
+			l.flushStr();
+			l.tokens = append(l.tokens, *token.NewToken(token.MODULO, "%"))
 		case ch == '/':
 			l.flushInt()
 			l.flushStr()

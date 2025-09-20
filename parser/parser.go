@@ -319,6 +319,77 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 
 	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
 }
+
+func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode{
+	if toks[0].TokType != token.WHILE{
+		panic(fmt.Sprintf("[ERROR] Expected \"WHILE\" got %v\n", toks[0]));
+	}
+	// Calculate condition
+	var condToks []token.Token
+	condLen := 0
+	for i, val := range toks[1:] {
+		if val.TokType != token.LBRACE {
+			condToks = append(condToks, val)
+		} else {
+			condLen = i
+			break
+		}
+	}
+	cond := p.parseExpression(condToks)
+	body := p.splitIntoLines(toks[condLen+2 : len(toks)-1])
+	var parsedStmts []ast.Node
+	for _, val := range body {
+		n := p.parseStmt(val)
+		if n != nil {
+			parsedStmts = append(parsedStmts, n)
+		}
+	}
+	if cond.NodeType() == ast.BoolLiteral {
+		boolCond, ok := cond.(*ast.BoolLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %+v\n", cond))
+		}
+		return &ast.WhileStmtNode{
+			Cond: boolCond,
+			Body: parsedStmts,
+		}
+	}
+	if cond.NodeType() == ast.BoolInfix {
+		boolCond, ok := cond.(*ast.BoolInfixNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
+		}
+		return &ast.WhileStmtNode{
+			Cond: boolCond,
+			Body: parsedStmts,
+		}
+	}
+	if cond.NodeType() == ast.ReferenceExpr {
+		refExpr, ok := cond.(*ast.ReferenceExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
+		}
+		return &ast.WhileStmtNode{
+			Cond: &ast.BoolInfixNode{
+				Left:     refExpr,
+				Operator: token.OR,
+				Right:    &ast.BoolLiteralNode{Value: false},
+			},
+			Body: parsedStmts,
+		}
+	}
+	if cond.NodeType() == ast.PrefixExpr {
+		prefixExpr, ok := cond.(*ast.PrefixExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
+		}
+		return &ast.WhileStmtNode{
+			Cond: prefixExpr,
+			Body: parsedStmts,
+		}
+	}
+	panic(fmt.Sprintf("[ERROR] Could not parse while statement, tokens are %+v\n, cond types are %v\n", toks, cond.NodeType()));
+}
 func (p *Parser) parseElseStmt(toks []token.Token) {
 	// Semantic checks
 	if toks[0].TokType != token.ELSE {
@@ -373,6 +444,12 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 		if firstTok.TokType == token.RBRACE || firstTok.TokType == token.LBRACE || firstTok.TokType == token.SEMICOLON {
 			return nil
 		}
+		if firstTok.TokType == token.CONTINUE{
+			return &ast.ContinueStmtNode{};
+		}
+		if firstTok.TokType == token.BREAK{
+			return &ast.BreakStmtNode{}
+		}
 		// For single-token lines, let parseExpression handle literals and var refs.
 		return p.parseExpression(line)
 	}
@@ -395,6 +472,15 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 	}
 	if firstTok.TokType == token.RETURN {
 		return p.parseReturnExpr(line)
+	}
+	if firstTok.TokType == token.WHILE{
+		return p.parseWhileStmt(line);
+	}
+	if firstTok.TokType == token.CONTINUE{
+		return &ast.ContinueStmtNode{}
+	}
+	if firstTok.TokType == token.BREAK{
+		return &ast.BreakStmtNode{};
 	}
 	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)

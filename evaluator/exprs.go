@@ -5,7 +5,16 @@ import (
 	"toy_lang/ast"
 	"toy_lang/token"
 )
-
+func intPow(x, y int) int {
+    if y < 0 {
+        panic("negative exponent not supported for integers")
+    }
+    result := 1
+    for i := 0; i < y; i++ {
+        result *= x
+    }
+    return result
+}
 func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 	var node ast.Node = inode
 
@@ -46,6 +55,10 @@ func (i *Interpreter) execIntExpr(inode ast.Node, local_scope *Scope) int {
 			return i.execIntExpr(node.Left, local_scope) * i.execIntExpr(node.Right, local_scope)
 		case token.DIVIDE:
 			return i.execIntExpr(node.Left, local_scope) / i.execIntExpr(node.Right, local_scope)
+		case token.MODULO:
+			return i.execIntExpr(node.Left, local_scope) % i.execIntExpr(node.Right, local_scope);
+		case token.EXPONENT:
+			return intPow(i.execIntExpr(node.Left, local_scope), i.execIntExpr(node.Right, local_scope));
 		}
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown int expression: %v", node))

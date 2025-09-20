@@ -1,4 +1,4 @@
-println("Welcome to concater");
+println("Welcome to the concat machine");
 let in1 = input("Please enter a string: ");
 let in2 = input("Pease enter another string: ");
 let output= in1 + in2;

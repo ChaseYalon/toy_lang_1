@@ -314,6 +314,31 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 31,
 		},
+		
+		{
+			input: "let x = 0; while x < 10{x++;}",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 10},
+			},
+			id: 32,
+		},
+
+		{
+			input: "let x = 0; while x < 10{break;}",
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 0},
+			},
+			id: 33,
+		},
+
+		{
+			input: `println("bye");let x = 0; while x < 10{x++; continue; print("hi");}`,
+			output: map[string]ast.Node{
+				"x": &ast.IntLiteralNode{Value: 10},
+			},
+			want_str: "bye\n",
+			id: 34,
+		},
 	}
 
 	for _, tt := range tests {

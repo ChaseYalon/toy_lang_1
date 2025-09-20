@@ -69,6 +69,20 @@ func (i *Interpreter) execStringExpr(node ast.Node, local_scope *Scope) string {
 		str := strconv.FormatBool(refNode.Value)
 		return str
 	}
+	if node.NodeType() == ast.EmptyExpr{
+		emptNode, ok := node.(*ast.EmptyExprNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Could not convert node to Empty expression, got %v\n", node))
+		}
+		return i.execStringExpr(emptNode.Child, local_scope);
+	}
+	if node.NodeType() == ast.FuncCall{
+		funcCall, ok := node.(*ast.FuncCallNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Could not convert node to func call, got %v\n", node));
+		}
+		return i.execStringExpr(i.execFuncCall(funcCall, local_scope), local_scope);
+	}
 	panic(fmt.Sprintf("[ERROR] Type unsupported for string operations, got %v of value %v\n", node.NodeType(), node))
 }
 

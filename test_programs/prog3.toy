@@ -1,0 +1,19 @@
+fn fizzbuzz(n){
+    let i = 0;
+    while i < n{
+        let string = "";
+        if (i % 3) == 0{
+            string += "fizz";
+        }
+        if (i % 5) == 0{
+            string += "buzz";
+        }
+        if string == ""{
+            string += str(i)
+        }
+        println(string);
+        i++;
+    }
+}
+
+fizzbuzz(100);

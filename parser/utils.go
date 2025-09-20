@@ -10,18 +10,20 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.MINUS:            1,
 		token.MULTIPLY:         2,
 		token.DIVIDE:           2,
+		token.MODULO:			2,
+		token.EXPONENT:			3,
 		token.BOOLEAN:          100,
 		token.INTEGER:          100, // Boolean, int, string, and var ref should never be "bound to"
 		token.STRING:           100,
 		token.VAR_REF:          100,
-		token.AND:              3,
-		token.OR:               3,
-		token.NOT:              4, // Logical operators have lower precedence than arithmetic, not is lowest
-		token.LESS_THAN:        3,
-		token.LESS_THAN_EQT:    3,
-		token.GREATER_THAN:     3,
-		token.GREATER_THAN_EQT: 3,
-		token.EQUALS:           3,
+		token.AND:              4,
+		token.OR:               4,
+		token.NOT:              5, // Logical operators have lower precedence than arithmetic, not is lowest
+		token.LESS_THAN:        4,
+		token.LESS_THAN_EQT:    4,
+		token.GREATER_THAN:     4,
+		token.GREATER_THAN_EQT: 4,
+		token.EQUALS:           4,
 	}
 }
 

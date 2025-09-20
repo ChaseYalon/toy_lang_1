@@ -31,13 +31,19 @@ Roadmap:
     a. Print --Done
     b. Print --Done
     c. Input --Done
-    d. Int
-    e. Bool
-    f. Str
-8. While loops
+    d. Int --Done
+    e. Bool --Done
+    f. Str --Done
+8. Loops
+    a. While --Done
+    b. Break --Done
+    c. Continue --Done
 9. Floating points
 10. User defined data types (structs/classes)
 11. Macros
 
 Notes:
 I have decided not to do elsif, can do it later but if()elsif()else() can just be if()else(if());
+I have also decided not to do for because I am a lazy fuck
+
+Make it so that x % y == z results in (x % y) == z not x % (y == z) that makes no sense

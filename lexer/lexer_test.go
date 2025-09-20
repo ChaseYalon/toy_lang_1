@@ -661,6 +661,44 @@ func TestLexer(t *testing.T) {
 			},
 			id: 29,
 		},
+		{
+			input: `while true&&!false{}`,
+			output: []token.Token{
+				*token.NewToken(token.WHILE, "while"),
+				*token.NewToken(token.BOOLEAN, "true"),
+				*token.NewToken(token.AND, "&&"),
+				*token.NewToken(token.NOT, "!"),
+				*token.NewToken(token.BOOLEAN, "false"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+			id: 30,
+		},
+		{
+			input: "while true{break;}",
+			output: []token.Token{
+				*token.NewToken(token.WHILE, "while"),
+				*token.NewToken(token.BOOLEAN, "true"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.BREAK, "break"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+			id: 31,
+		},
+		{
+			input: "while !false{continue;}",
+			output: []token.Token{
+				*token.NewToken(token.WHILE, "while"),
+				*token.NewToken(token.NOT, "!"),
+				*token.NewToken(token.BOOLEAN, "false"),
+				*token.NewToken(token.LBRACE, "{"),
+				*token.NewToken(token.CONTINUE, "continue"),
+				*token.NewToken(token.SEMICOLON, ";"),
+				*token.NewToken(token.RBRACE, "}"),
+			},
+			id: 32,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)
