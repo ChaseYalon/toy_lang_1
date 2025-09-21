@@ -323,5 +323,6 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 
 		return res
 	}
-	panic(fmt.Sprintf("[ERROR] Could not figure out what to parse, got %v of type %v\n", node, node.NodeType()))
+
+	panic(fmt.Sprintf("[ERROR] Could not figure out what to evaluate, got %v of type %v\n", node, node.NodeType()))
 }

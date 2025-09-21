@@ -21,6 +21,11 @@ func (v v_map) String() string {
 	return s
 }
 
+// Wrapper to propagate return values
+type ReturnValue struct {
+	Val ast.Node
+}
+
 type Interpreter struct {
 	MainScope Scope
 	reader    *bufio.Reader
@@ -33,6 +38,7 @@ func NewInterpreter() Interpreter {
 	}
 	ms := builtinScope.newChild()
 
+	// Builtin functions
 	builtinScope.Funcs["print"] = ast.FuncDecNode{
 		Name:   "print",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
@@ -43,7 +49,6 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	builtinScope.Funcs["println"] = ast.FuncDecNode{
 		Name:   "println",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
@@ -54,7 +59,6 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	builtinScope.Funcs["input"] = ast.FuncDecNode{
 		Name:   "input",
 		Params: []ast.ReferenceExprNode{{Name: "prompt"}},
@@ -67,7 +71,6 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	builtinScope.Funcs["int"] = ast.FuncDecNode{
 		Name:   "int",
 		Params: []ast.ReferenceExprNode{{Name: "convertToInt"}},
@@ -80,7 +83,6 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	builtinScope.Funcs["bool"] = ast.FuncDecNode{
 		Name:   "bool",
 		Params: []ast.ReferenceExprNode{{Name: "convertToBool"}},
@@ -93,7 +95,6 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
 	builtinScope.Funcs["str"] = ast.FuncDecNode{
 		Name:   "str",
 		Params: []ast.ReferenceExprNode{{Name: "convertToStr"}},
@@ -106,100 +107,141 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-	i := Interpreter{
+
+	return Interpreter{
 		MainScope: *ms,
 		reader:    bufio.NewReader(os.Stdin),
 	}
-	return i
 }
 
-func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) {
+func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) any {
+	switch node.NodeType() {
+	case ast.LetStmt, ast.VarReassign:
+		i.changeVarVal(node, local_scope)
+	case ast.IfStmt:
+		return i.execIfStmt(node, local_scope)
+	case ast.WhileStmt:
+		return i.execWhileStmt(node, local_scope)
+	case ast.FuncDec:
+		local_scope.declareFunc(*node.(*ast.FuncDecNode))
+	case ast.FuncCall:
+		return i.execFuncCall(node, local_scope)
+	case ast.CallBuiltin:
+		return i.callBuiltin(node, local_scope)
+	case ast.ReturnExpr: 
+		returnNode := node.(*ast.ReturnExprNode)
+		returnVal := i.execExpr(returnNode.Val, local_scope)
+		return ReturnValue{Val: returnVal}
+	case ast.EmptyExpr:
+		child := node.(*ast.EmptyExprNode).Child
+		return i.executeStmt(child, local_scope)
+	default:
+		// For expressions used as statements
+		switch node.(type) {
+		case *ast.IntLiteralNode, *ast.FloatLiteralNode, *ast.BoolLiteralNode, *ast.StringLiteralNode:
+			i.execExpr(node, local_scope)
+		case ast.Node:
+			i.execExpr(node, local_scope)
+		default:
+			panic(fmt.Sprintf("[ERROR] Unknown statement type: %v, of type %v\n", node, node.NodeType()))
+		}
+	}
+	return nil
+}
+
+func (i *Interpreter) execIfStmt(node ast.Node, local_scope *Scope) interface{} {
 	ifStmt := node.(*ast.IfStmtNode)
 	cond := i.execBoolExpr(ifStmt.Cond, local_scope)
 	newScope := local_scope.newChild()
+
 	if cond {
 		for _, stmt := range ifStmt.Body {
-			i.executeStmt(stmt, newScope)
+			if ret := i.executeStmt(stmt, newScope); ret != nil {
+				if r, ok := ret.(ReturnValue); ok {
+					return r
+				}
+			}
 		}
 	} else {
 		for _, stmt := range ifStmt.Alt {
-			i.executeStmt(stmt, newScope)
+			if ret := i.executeStmt(stmt, newScope); ret != nil {
+				if r, ok := ret.(ReturnValue); ok {
+					return r
+				}
+			}
 		}
 	}
+	return nil
 }
+
+func (i *Interpreter) execWhileStmt(node ast.Node, local_scope *Scope) interface{} {
+	whileStmt := node.(*ast.WhileStmtNode)
+
+	for i.execBoolExpr(whileStmt.Cond, local_scope) {
+		bodyScope := local_scope.newChild()
+		for _, stmt := range whileStmt.Body {
+			if stmt.NodeType() == ast.BreakSmt{
+				goto EndOfOuter
+			}
+			if stmt.NodeType() == ast.ContinueStmt{
+				goto EndOfInner
+			}
+			if ret := i.executeStmt(stmt, bodyScope); ret != nil {
+				if r, ok := ret.(ReturnValue); ok {
+					return r
+				}
+			}
+		}
+		// Apply body scope changes back
+		for k, v := range bodyScope.Vars {
+			local_scope.Vars[k] = v
+		}
+		EndOfInner:
+	}
+	EndOfOuter:
+	return nil
+}
+
 
 func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 	fCall := node.(*ast.FuncCallNode)
-
 	f, found := local_scope.getFunc(fCall.Name.Name)
 	if !found {
 		panic(fmt.Sprintf("[ERROR] Could not find function %s\n", fCall.Name.Name))
 	}
 
 	callScope := local_scope.newChild()
-
 	if len(f.Params) != len(fCall.Params) {
 		panic(fmt.Sprintf("[ERROR] Function %s must be called with exactly %d params, got %d\n",
 			f.Name, len(f.Params), len(fCall.Params)))
 	}
 
+	// Assign parameters
 	for j, param := range f.Params {
 		letStmt := &ast.LetStmtNode{Name: param.Name, Value: fCall.Params[j]}
 		i.changeVarVal(letStmt, callScope)
 	}
 
+	// Execute function body
 	for _, stmt := range f.Body {
-		if stmt.NodeType() == ast.ReturnExpr {
-			ret := stmt.(*ast.ReturnExprNode)
-			return i.execExpr(ret.Val, callScope)
+		if ret := i.executeStmt(stmt, callScope); ret != nil {
+			if r, ok := ret.(ReturnValue); ok {
+				return r.Val
+			}
 		}
-		i.executeStmt(stmt, callScope)
 	}
-
 	return nil
 }
-func (i *Interpreter) execWhileStmt(node ast.Node, local_scope *Scope) {
-	whileStmt := node.(*ast.WhileStmtNode)
 
-	for i.execBoolExpr(whileStmt.Cond, local_scope) {
-		// Create a child scope for the loop body
-		bodyScope := local_scope.newChild()
+func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
+	inode := node.(*ast.CallBuiltinNode)
 
-		skipRest := false
-
-		for _, stmt := range whileStmt.Body {
-			if skipRest {
-				break
-			}
-
-			switch stmt.NodeType() {
-			case ast.BreakSmt:
-				return // exit the while loop entirely
-			case ast.ContinueStmt:
-				skipRest = true // skip remaining statements
-				break
-			default:
-				i.executeStmt(stmt, bodyScope)
-			}
-		}
-
-		// Apply variable changes from bodyScope back to local_scope if needed
-		for k, v := range bodyScope.Vars {
-			local_scope.Vars[k] = v
-		}
-	}
-}
-
-func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
-	node := inode.(*ast.CallBuiltinNode)
-
-	switch node.Name {
+	switch inode.Name {
 	case "print", "println":
-		if len(node.Params) != 1 {
-			panic(fmt.Sprintf("[ERROR] Builtin %s must be called with 1 argument, got %v", node.Name, node))
+		if len(inode.Params) != 1 {
+			panic(fmt.Sprintf("[ERROR] Builtin %s must be called with 1 argument, got %v", inode.Name, inode))
 		}
-		val := i.execExpr(node.Params[0], local_scope)
-
+		val := i.execExpr(inode.Params[0], local_scope)
 		var output string
 		switch v := val.(type) {
 		case *ast.StringLiteralNode:
@@ -211,19 +253,15 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
 		default:
 			panic(fmt.Sprintf("[ERROR] Cannot print value of type %v", val))
 		}
-
-		if node.Name == "print" {
+		if inode.Name == "print" {
 			fmt.Print(output)
 		} else {
 			fmt.Println(output)
 		}
 		return &ast.StringLiteralNode{Value: ""}
-
 	case "input":
-		// print prompt first
-		promptNode := &ast.CallBuiltinNode{Name: "print", Params: []ast.Node{node.Params[0]}}
+		promptNode := &ast.CallBuiltinNode{Name: "print", Params: []ast.Node{inode.Params[0]}}
 		i.callBuiltin(promptNode, local_scope)
-
 		reader := bufio.NewReader(os.Stdin)
 		text, err := reader.ReadString('\n')
 		if err != nil {
@@ -233,121 +271,56 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
 		text = strings.TrimSuffix(text, "\n")
 		return &ast.StringLiteralNode{Value: text}
 	case "str":
-		toConv := i.execExpr(node.Params[0], local_scope)
-		if toConv.NodeType() == ast.StringLiteral {
-			return toConv
+		toConv := i.execExpr(inode.Params[0], local_scope)
+		switch t := toConv.(type) {
+		case *ast.StringLiteralNode:
+			return t
+		case *ast.BoolLiteralNode:
+			return &ast.StringLiteralNode{Value: strconv.FormatBool(t.Value)}
+		case *ast.IntLiteralNode:
+			return &ast.StringLiteralNode{Value: strconv.Itoa(t.Value)}
+		default:
+			panic(fmt.Sprintf("[ERROR] Cannot convert type %v to string", toConv.NodeType()))
 		}
-		if toConv.NodeType() == ast.BoolLiteral {
-			toConvB, ok := toConv.(*ast.BoolLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to string, got %v\n", node))
-			}
-			res := strconv.FormatBool(toConvB.Value)
-			return &ast.StringLiteralNode{Value: res}
-		}
-		if toConv.NodeType() == ast.IntLiteral {
-			toConvI, ok := toConv.(*ast.IntLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert int literal to string, got %v\n", node))
-			}
-			res := strconv.Itoa(toConvI.Value)
-			return &ast.StringLiteralNode{Value: res}
-		}
-
-		panic(fmt.Sprintf("[ERROR] Could not convert type %v to string", node.NodeType()))
 	case "int":
-		toConv := i.execExpr(node.Params[0], local_scope)
-		if toConv.NodeType() == ast.IntLiteral {
-			return toConv
-		}
-		if toConv.NodeType() == ast.BoolLiteral {
-			toConvB, ok := toConv.(*ast.BoolLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to int, got %v\n", node))
+		toConv := i.execExpr(inode.Params[0], local_scope)
+		switch t := toConv.(type) {
+		case *ast.IntLiteralNode:
+			return t
+		case *ast.BoolLiteralNode:
+			v := 0
+			if t.Value {
+				v = 1
 			}
-			res := func() int {
-				if toConvB.Value {
-					return 1
-				}
-				return 0
-			}()
-			return &ast.IntLiteralNode{Value: res}
-		}
-		if toConv.NodeType() == ast.StringLiteral {
-			toConvS, ok := toConv.(*ast.StringLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert string literal to int, got %v\n", node))
-			}
-			res, err := strconv.Atoi(toConvS.Value)
+			return &ast.IntLiteralNode{Value: v}
+		case *ast.StringLiteralNode:
+			val, err := strconv.Atoi(t.Value)
 			if err != nil {
-				panic(fmt.Sprintf("Got following error converting from str to int, %v", err))
+				panic(fmt.Sprintf("[ERROR] Cannot convert string to int: %v", err))
 			}
-			return &ast.IntLiteralNode{Value: res}
+			return &ast.IntLiteralNode{Value: val}
+		default:
+			panic(fmt.Sprintf("[ERROR] Cannot convert type %v to int", toConv.NodeType()))
 		}
 	case "bool":
-		toConv := i.execExpr(node.Params[0], local_scope)
-		if toConv.NodeType() == ast.BoolLiteral {
-			return toConv
-		}
-		if toConv.NodeType() == ast.IntLiteral {
-			toConvI, ok := toConv.(*ast.IntLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert bool literal to int, got %v\n", node))
-			}
-			res := func() bool { return toConvI.Value > 0 }()
-			return &ast.BoolLiteralNode{Value: res}
-		}
-		if toConv.NodeType() == ast.StringLiteral {
-			toConvS, ok := toConv.(*ast.StringLiteralNode)
-			if !ok {
-				panic(fmt.Sprintf("[ERROR] Could not convert string literal to int, got %v\n", node))
-			}
-			if toConvS.Value == "" || toConvS.Value == "false" {
+		toConv := i.execExpr(inode.Params[0], local_scope)
+		switch t := toConv.(type) {
+		case *ast.BoolLiteralNode:
+			return t
+		case *ast.IntLiteralNode:
+			return &ast.BoolLiteralNode{Value: t.Value > 0}
+		case *ast.StringLiteralNode:
+			if t.Value == "" || t.Value == "false" {
 				return &ast.BoolLiteralNode{Value: false}
 			}
 			return &ast.BoolLiteralNode{Value: true}
+		default:
+			panic(fmt.Sprintf("[ERROR] Cannot convert type %v to bool", toConv.NodeType()))
 		}
-
-		panic(fmt.Sprintf("[ERROR] Could not convert type %v to string", node.NodeType()))
 	}
-
-	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", node))
+	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", inode.Name))
 }
 
-func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
-	switch node.NodeType() {
-	case ast.IntLiteral, ast.InfixExpr, ast.FloatLiteral:
-		i.execExpr(node, local_scope)
-	case ast.BoolLiteral, ast.BoolInfix, ast.PrefixExpr:
-		i.execBoolExpr(node, local_scope)
-	case ast.LetStmt, ast.VarReassign:
-		i.changeVarVal(node, local_scope)
-	case ast.IfStmt:
-		i.execIfStmt(node, local_scope)
-	case ast.FuncDec:
-		fNode, ok := node.(*ast.FuncDecNode)
-		if !ok {
-			panic(fmt.Sprintf("[ERROR] Could not find function %v\n", node))
-		}
-		local_scope.declareFunc(*fNode)
-	case ast.FuncCall:
-		i.execFuncCall(node, local_scope)
-	case ast.StringLiteral:
-		i.execStringExpr(node, local_scope)
-	case ast.CallBuiltin:
-		i.callBuiltin(node, local_scope)
-	case ast.EmptyExpr:
-		emptExpr, ok := node.(*ast.EmptyExprNode)
-		if !ok {
-			panic(fmt.Sprintf("WTF happend here, got %v\n", node))
-		}
-		i.executeStmt(emptExpr.Child, local_scope)
-	case ast.WhileStmt:
-		i.execWhileStmt(node, local_scope)
-	default:
-		panic(fmt.Sprintf("[ERROR] Unknown statement type: %v, of type %v\n", node, node.NodeType()))
-	}
-}
 
 func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope {
 	for _, stmt := range program.Statements {

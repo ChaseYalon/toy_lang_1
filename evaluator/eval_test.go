@@ -60,7 +60,6 @@ type tEvalRes struct {
 	enter_str string
 	id        int
 }
-
 func TestEvaluator(t *testing.T) {
 	tests := []tEvalRes{
 		{
@@ -371,35 +370,60 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 38,
 		},
+
+		{
+			input: `
+			fn factorial(n){
+				if n == 0{
+					return 1;
+				}
+				if n == 1{
+					return 1;
+				}
+				return n * factorial(n - 1);
+			}
+
+			let res = factorial(6);`,
+			output: map[string]ast.Node{
+				"res": &ast.IntLiteralNode{Value: 720},
+			},
+			id: 39,
+		},
 	}
 
 	for _, tt := range tests {
-		lex := lexer.NewLexer()
-		parse := parser.NewParser()
-		exec := NewInterpreter()
-		program := parse.Parse(lex.Lex(tt.input))
+		// Create a separate function to handle each test case properly
+		func() {
+			lex := lexer.NewLexer()
+			parse := parser.NewParser()
+			exec := NewInterpreter()
+			program := parse.Parse(lex.Lex(tt.input))
 
-		if tt.enter_str != "" {
-			oldStdin := os.Stdin
-			r, w, _ := os.Pipe()
-			w.WriteString(tt.enter_str + "\n")
-			w.Close()
-			os.Stdin = r
-			defer func() { os.Stdin = oldStdin }()
-		}
-
-		if tt.output != nil {
-			compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)
-		}
-		if tt.want_str != "" {
-			out := captureOutput(func() {
-				exec.Execute(program, false)
-			})
-			if out != tt.want_str {
-				t.Errorf("[FAILURE] Test number %d has failed\nGot: %q\nWant: %q\n", tt.id, out, tt.want_str)
-			} else {
-				fmt.Printf("\033[32m[PASS] Test number %d has passed\033[0m\n", tt.id)
+			// Handle stdin mocking properly
+			if tt.enter_str != "" {
+				oldStdin := os.Stdin
+				r, w, _ := os.Pipe()
+				w.WriteString(tt.enter_str + "\n")
+				w.Close()
+				os.Stdin = r
+				
+				// This defer will execute at the end of this anonymous function
+				defer func() { os.Stdin = oldStdin }()
 			}
-		}
+
+			if tt.output != nil {
+				compareVMap(t, exec.Execute(program, false).Vars, tt.output, tt)
+			}
+			if tt.want_str != "" {
+				out := captureOutput(func() {
+					exec.Execute(program, false)
+				})
+				if out != tt.want_str {
+					t.Errorf("[FAILURE] Test number %d has failed\nGot: %q\nWant: %q\n", tt.id, out, tt.want_str)
+				} else {
+					fmt.Printf("\033[32m[PASS] Test number %d has passed\033[0m\n", tt.id)
+				}
+			}
+		}() // Execute the anonymous function immediately
 	}
 }
