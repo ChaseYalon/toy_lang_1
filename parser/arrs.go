@@ -1,9 +1,9 @@
-package parser;
+package parser
 
 import (
+	"fmt"
 	"toy_lang/ast"
 	"toy_lang/token"
-	"fmt"
 )
 
 func (p *Parser) parseArr(toks []token.Token) ast.Node {
@@ -19,7 +19,7 @@ func (p *Parser) parseArr(toks []token.Token) ast.Node {
 
 	var vals [][]token.Token
 	var currVal []token.Token
-	for _, val := range toks[1 : len(toks)-1] { 
+	for _, val := range toks[1 : len(toks)-1] {
 		if val.TokType == token.COMMA {
 			vals = append(vals, currVal)
 			currVal = []token.Token{}
@@ -44,5 +44,24 @@ func (p *Parser) parseArr(toks []token.Token) ast.Node {
 
 	return &ast.ArrLiteralNode{
 		Elems: arrElems,
+	}
+}
+
+func (p *Parser) parseArrRef(toks []token.Token) ast.ArrRefNode {
+	if toks[0].TokType != token.VAR_REF {
+		panic(fmt.Sprintf("[ERROR] Could not figure out what array to reference, got %v\n", toks))
+	}
+	if toks[1].TokType != token.LBRACK {
+		panic(fmt.Sprintf("[ERROR] Var name must be followed by \"[\" got %v\n", toks))
+	}
+	if toks[len(toks)-1].TokType != token.RBRACK {
+		panic(fmt.Sprintf("[ERROR] Could not figure out where array index ends, it must end with \"]\", got %v\n", toks))
+	}
+
+	name := p.parseVarReference(toks[0])
+	val := p.parseExpression(toks[2 : len(toks)-1])
+	return ast.ArrRefNode{
+		Arr: *name,
+		Idx: val,
 	}
 }

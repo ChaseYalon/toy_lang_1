@@ -3,8 +3,8 @@ package evaluator
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"math/rand"
+	"os"
 
 	"strconv"
 	"strings"
@@ -110,24 +110,24 @@ func NewInterpreter() Interpreter {
 		},
 	}
 	builtinScope.Funcs["randInt"] = ast.FuncDecNode{
-		Name: "randInt",
+		Name:   "randInt",
 		Params: []ast.ReferenceExprNode{{Name: "min"}, {Name: "max"}},
 		Body: []ast.Node{
 			&ast.ReturnExprNode{
 				Val: &ast.CallBuiltinNode{
-					Name: "randInt",
+					Name:   "randInt",
 					Params: []ast.Node{&ast.ReferenceExprNode{Name: "min"}, &ast.ReferenceExprNode{Name: "max"}},
 				},
 			},
 		},
 	}
 	builtinScope.Funcs["randf"] = ast.FuncDecNode{
-		Name: "randf",
+		Name:   "randf",
 		Params: []ast.ReferenceExprNode{{Name: "min"}, {Name: "max"}},
 		Body: []ast.Node{
 			&ast.ReturnExprNode{
 				Val: &ast.CallBuiltinNode{
-					Name: "randf",
+					Name:   "randf",
 					Params: []ast.Node{&ast.ReferenceExprNode{Name: "min"}, &ast.ReferenceExprNode{Name: "max"}},
 				},
 			},
@@ -153,7 +153,7 @@ func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) any {
 		return i.execFuncCall(node, local_scope)
 	case ast.CallBuiltin:
 		return i.callBuiltin(node, local_scope)
-	case ast.ReturnExpr: 
+	case ast.ReturnExpr:
 		returnNode := node.(*ast.ReturnExprNode)
 		returnVal := i.execExpr(returnNode.Val, local_scope)
 		return ReturnValue{Val: returnVal}
@@ -205,10 +205,10 @@ func (i *Interpreter) execWhileStmt(node ast.Node, local_scope *Scope) interface
 	for i.execBoolExpr(whileStmt.Cond, local_scope) {
 		bodyScope := local_scope.newChild()
 		for _, stmt := range whileStmt.Body {
-			if stmt.NodeType() == ast.BreakSmt{
+			if stmt.NodeType() == ast.BreakSmt {
 				goto EndOfOuter
 			}
-			if stmt.NodeType() == ast.ContinueStmt{
+			if stmt.NodeType() == ast.ContinueStmt {
 				goto EndOfInner
 			}
 			if ret := i.executeStmt(stmt, bodyScope); ret != nil {
@@ -221,12 +221,11 @@ func (i *Interpreter) execWhileStmt(node ast.Node, local_scope *Scope) interface
 		for k, v := range bodyScope.Vars {
 			local_scope.Vars[k] = v
 		}
-		EndOfInner:
+	EndOfInner:
 	}
-	EndOfOuter:
+EndOfOuter:
 	return nil
 }
-
 
 func (i *Interpreter) execFuncCall(node ast.Node, local_scope *Scope) ast.Node {
 	fCall := node.(*ast.FuncCallNode)
@@ -276,7 +275,7 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 		case *ast.BoolLiteralNode:
 			output = strconv.FormatBool(v.Value)
 		case *ast.FloatLiteralNode:
-			output = strconv.FormatFloat(v.Value, 'f',-1, 64);
+			output = strconv.FormatFloat(v.Value, 'f', -1, 64)
 		default:
 			panic(fmt.Sprintf("[ERROR] Cannot print value of type %v", val))
 		}
@@ -345,41 +344,39 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 			panic(fmt.Sprintf("[ERROR] Cannot convert type %v to bool", toConv.NodeType()))
 		}
 	case "randInt":
-		min := i.execIntExpr(inode.Params[0], local_scope);
-		max := i.execIntExpr(inode.Params[1], local_scope);
+		min := i.execIntExpr(inode.Params[0], local_scope)
+		max := i.execIntExpr(inode.Params[1], local_scope)
 		//rand.Seed(time.Now().UnixNano())
-		n := rand.Intn(max - min+1) + min;
+		n := rand.Intn(max-min+1) + min
 		return &ast.IntLiteralNode{Value: n}
 
-
 	case "randf":
-		min := i.execExpr(inode.Params[0], local_scope);
-		max := i.execExpr(inode.Params[1], local_scope);
-		var minVal float64 = 0.0;
-		var maxVal float64 = 0.0;
+		min := i.execExpr(inode.Params[0], local_scope)
+		max := i.execExpr(inode.Params[1], local_scope)
+		var minVal float64 = 0.0
+		var maxVal float64 = 0.0
 
-		if min.NodeType() == ast.FloatLiteral{
-			minF := min.(*ast.FloatLiteralNode);
-			minVal = minF.Value;
+		if min.NodeType() == ast.FloatLiteral {
+			minF := min.(*ast.FloatLiteralNode)
+			minVal = minF.Value
 		}
-		if min.NodeType() == ast.IntLiteral{
-			minI := min.(*ast.IntLiteralNode);
-			minVal = float64(minI.Value);
+		if min.NodeType() == ast.IntLiteral {
+			minI := min.(*ast.IntLiteralNode)
+			minVal = float64(minI.Value)
 		}
-		if max.NodeType() == ast.FloatLiteral{
-			maxF := max.(*ast.FloatLiteralNode);
-			maxVal = maxF.Value;
+		if max.NodeType() == ast.FloatLiteral {
+			maxF := max.(*ast.FloatLiteralNode)
+			maxVal = maxF.Value
 		}
-		if max.NodeType() == ast.IntLiteral{
-			maxI := max.(*ast.IntLiteralNode);
-			maxVal = float64(maxI.Value);
+		if max.NodeType() == ast.IntLiteral {
+			maxI := max.(*ast.IntLiteralNode)
+			maxVal = float64(maxI.Value)
 		}
-		return &ast.FloatLiteralNode{Value : minVal + rand.Float64()*(maxVal - minVal)}
+		return &ast.FloatLiteralNode{Value: minVal + rand.Float64()*(maxVal-minVal)}
 
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", inode.Name))
 }
-
 
 func (i *Interpreter) Execute(program ast.ProgramNode, should_print bool) Scope {
 	for _, stmt := range program.Statements {

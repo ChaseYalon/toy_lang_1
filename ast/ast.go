@@ -32,6 +32,7 @@ const (
 	PrefixExpr
 	EmptyExpr
 	ReturnExpr
+	ArrRef
 
 	//Datatypes
 	IntLiteral
@@ -88,6 +89,10 @@ func (n AstNode) String() string {
 		return "BREAK_STMT"
 	case FloatLiteral:
 		return "FLOAT_LITERAL"
+	case ArrLiteral:
+		return "ARR_LITERAL"
+	case ArrRef:
+		return "ARR_REF"
 	default:
 		return "ILLEGAL"
 	}
@@ -371,30 +376,43 @@ func (n *ContinueStmtNode) String() string {
 	return "CONTINUE"
 }
 
-type FloatLiteralNode struct{
+type FloatLiteralNode struct {
 	Value float64
 }
-func (n *FloatLiteralNode)NodeType() AstNode{
-	return FloatLiteral;
+
+func (n *FloatLiteralNode) NodeType() AstNode {
+	return FloatLiteral
 }
-func (n *FloatLiteralNode)String() string{
-	return fmt.Sprintf("FLOAT(%g)", n.Value);
+func (n *FloatLiteralNode) String() string {
+	return fmt.Sprintf("FLOAT(%g)", n.Value)
 }
 
-//Arrays are hashmaps under the hood arr["hi"] = true is totally valid
-type ArrLiteralNode struct{
+// Arrays are hashmaps under the hood arr["hi"] = true is totally valid
+type ArrLiteralNode struct {
 	Elems map[Node]Node
-
 }
-func (n *ArrLiteralNode)NodeType() AstNode{
+
+func (n *ArrLiteralNode) NodeType() AstNode {
 	return ArrLiteral
 }
-func (n *ArrLiteralNode)String() string{
+func (n *ArrLiteralNode) String() string {
 	str := "["
-	for key, val := range n.Elems{
-		str += fmt.Sprintf("{%v : %v},", key, val);
+	for key, val := range n.Elems {
+		str += fmt.Sprintf("{%v : %v},", key, val)
 	}
-	str = str[:len(str)-1];
-	str += "]";
-	return str;
+	str = str[:len(str)-1]
+	str += "]"
+	return str
+}
+
+type ArrRefNode struct {
+	Arr ReferenceExprNode
+	Idx Node
+}
+
+func (n *ArrRefNode) NodeType() AstNode {
+	return ArrRef
+}
+func (n *ArrRefNode) String() string {
+	return fmt.Sprintf("%v[%v]", n.Arr, n.Idx)
 }

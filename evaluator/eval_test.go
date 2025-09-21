@@ -41,7 +41,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 		if wantVal.NodeType() == ast.ArrLiteral && gotVal.NodeType() == ast.ArrLiteral {
 			gotMap := gotVal.(*ast.ArrLiteralNode)
 			wantMap := wantVal.(*ast.ArrLiteralNode)
-			
+
 			// check lengths first
 			if len(gotMap.Elems) != len(wantMap.Elems) {
 				stderr += fmt.Sprintf("[FAIL] Wanted array length %d, got %d", len(wantMap.Elems), len(gotMap.Elems))
@@ -86,6 +86,7 @@ type tEvalRes struct {
 	enter_str string
 	id        int
 }
+
 func TestEvaluator(t *testing.T) {
 	tests := []tEvalRes{
 		{
@@ -415,7 +416,7 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 39,
 		},
-		
+
 		{
 			input: `let arr = [1, 2, 3];`,
 			output: map[string]ast.Node{
@@ -428,6 +429,21 @@ func TestEvaluator(t *testing.T) {
 				},
 			},
 			id: 40,
+		},
+
+		{
+			input: "let arr = [1, 2, 3]; let x = arr[2];",
+			output: map[string]ast.Node{
+				"arr": &ast.ArrLiteralNode{
+					Elems: map[ast.Node]ast.Node{
+						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
+						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
+						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+					},
+				},
+				"x": &ast.IntLiteralNode{Value: 3},
+			},
+			id: 41,
 		},
 	}
 
@@ -446,7 +462,7 @@ func TestEvaluator(t *testing.T) {
 				w.WriteString(tt.enter_str + "\n")
 				w.Close()
 				os.Stdin = r
-				
+
 				// This defer will execute at the end of this anonymous function
 				defer func() { os.Stdin = oldStdin }()
 			}

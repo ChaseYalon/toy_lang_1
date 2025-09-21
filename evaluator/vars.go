@@ -29,7 +29,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
 	case *ast.InfixExprNode:
 		// If we get here, it's not a string operation, so it must be int
-		valNode = i.execExpr(v, local_scope);
+		valNode = i.execExpr(v, local_scope)
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
 	case *ast.FloatLiteralNode:
@@ -69,12 +69,37 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 	case *ast.StringLiteralNode:
 		valNode = &ast.StringLiteralNode{Value: i.execStringExpr(v, local_scope)}
 	case *ast.ArrLiteralNode:
-		arrNode := value.(*ast.ArrLiteralNode);
-		elems := make(map[ast.Node]ast.Node);
-		for key, val := range arrNode.Elems{
-			elems[key] = i.execExpr(val, local_scope);
+		arrNode := value.(*ast.ArrLiteralNode)
+		elems := make(map[ast.Node]ast.Node)
+		for key, val := range arrNode.Elems {
+			elems[key] = i.execExpr(val, local_scope)
 		}
-		valNode = &ast.ArrLiteralNode{Elems: elems};
+		valNode = &ast.ArrLiteralNode{Elems: elems}
+	case *ast.ArrRefNode:
+		refNode := value.(*ast.ArrRefNode)
+		arr, found := local_scope.getVar(refNode.Arr.Name)
+		if !found {
+			panic(fmt.Sprintf("[ERROR] Cannot reference undefined variable, got %v\n", name))
+		}
+		arrMap, ok := arr.(*ast.ArrLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Variable %v is not an array, it is a %v\n", name, arr.NodeType()))
+		}
+
+		// Find the value by comparing string representations of keys
+		var val ast.Node
+		idxStr := i.execExpr(refNode.Idx, local_scope).String()
+		for key, value := range arrMap.Elems {
+			if key.String() == idxStr {
+				val = value
+				break
+			}
+		}
+
+		if val == nil {
+			panic(fmt.Sprintf("[ERROR] Value %v not found in arr %+v\n", refNode.Idx, arrMap))
+		}
+		valNode = val
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}
