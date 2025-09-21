@@ -445,6 +445,20 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 41,
 		},
+
+		{
+			input: "let arr = [1, 2, 3]; arr[2] = 4;",
+			output: map[string]ast.Node{
+				"arr": &ast.ArrLiteralNode{
+					Elems: map[ast.Node]ast.Node{
+						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
+						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
+						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 4},
+					},
+				},
+			},
+			id: 42,
+		},
 	}
 
 	for _, tt := range tests {

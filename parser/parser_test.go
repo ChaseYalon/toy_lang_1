@@ -217,6 +217,24 @@ func deepCompare(got, want ast.Node) bool {
 		}
 		return true
 	}
+	if want.NodeType() == ast.ArrRef && got.NodeType() == ast.ArrRef {
+		gotR := got.(*ast.ArrRefNode)
+		wantR := want.(*ast.ArrRefNode)
+
+		arrEq := deepCompare(&gotR.Arr, &wantR.Arr)
+		idxEq := deepCompare(gotR.Idx, wantR.Idx)
+		return arrEq && idxEq
+	}
+	if want.NodeType() == ast.ArrReassign && got.NodeType() == ast.ArrReassign {
+		gotR := got.(*ast.ArrReassignNode)
+		wantR := want.(*ast.ArrReassignNode)
+
+		arrEq := deepCompare(&gotR.Arr, &wantR.Arr)
+		idxEq := deepCompare(gotR.Idx, wantR.Idx)
+		valEq := deepCompare(gotR.NewVal, gotR.NewVal)
+		return arrEq && idxEq && valEq
+
+	}
 	fmt.Printf("[WARNING] HEY MORON!!!!! USING UNDEFINED TYPES IN TETS, got %v, want %v\n", got.NodeType(), want.NodeType())
 	return got.String() == want.String()
 }
@@ -1418,6 +1436,29 @@ func TestParser(t *testing.T) {
 				},
 			},
 			id: 38,
+		},
+		{
+			input: "let arr = [1, 2, 3]; arr[2] = 4;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "arr",
+						Value: &ast.ArrLiteralNode{
+							Elems: map[ast.Node]ast.Node{
+								&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
+								&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
+								&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+							},
+						},
+					},
+					&ast.ArrReassignNode{
+						Arr:    ast.ReferenceExprNode{Name: "arr"},
+						Idx:    &ast.IntLiteralNode{Value: 2},
+						NewVal: &ast.IntLiteralNode{Value: 4},
+					},
+				},
+			},
+			id: 39,
 		},
 	}
 

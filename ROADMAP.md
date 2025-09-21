@@ -43,9 +43,9 @@ Roadmap:
     b. Floating point arithmetic and parameters --Done
     c. Type promotion --Done
     d. Recursion --Done
-10. Arrays/Lists/Slices (tbd)
-    a. Array Literal
-    b. Accessing individual values
+10. Arrays (HashMaps)
+    a. Array Literal  --Done
+    b. Accessing individual values --Done
     c. Reassigning individual values
     d. Non int keys
     e. Methods

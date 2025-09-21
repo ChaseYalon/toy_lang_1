@@ -25,6 +25,7 @@ const (
 	LetStmt
 	ReferenceExpr
 	VarReassign
+	ArrReassign
 
 	//Exprs
 	InfixExpr
@@ -93,6 +94,8 @@ func (n AstNode) String() string {
 		return "ARR_LITERAL"
 	case ArrRef:
 		return "ARR_REF"
+	case ArrReassign:
+		return "ARR_REASSIGN"
 	default:
 		return "ILLEGAL"
 	}
@@ -415,4 +418,17 @@ func (n *ArrRefNode) NodeType() AstNode {
 }
 func (n *ArrRefNode) String() string {
 	return fmt.Sprintf("%v[%v]", n.Arr, n.Idx)
+}
+
+type ArrReassignNode struct {
+	Arr    ReferenceExprNode
+	Idx    Node
+	NewVal Node
+}
+
+func (n *ArrReassignNode) NodeType() AstNode {
+	return ArrReassign
+}
+func (n *ArrReassignNode) String() string {
+	return fmt.Sprintf("%v[%v] = %v", n.Arr, n.Idx, n.NewVal)
 }

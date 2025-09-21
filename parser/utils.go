@@ -88,3 +88,14 @@ func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) 
 	}
 	return lowestTok, lowestIndex
 }
+
+//Random helper function because go takes minimalism to far
+
+func includesItem(arr []token.Token, tok token.Token) (bool, int) {
+	for i, val := range arr {
+		if val == tok {
+			return true, i
+		}
+	}
+	return false, -1
+}

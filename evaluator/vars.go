@@ -136,3 +136,18 @@ func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 		panic(fmt.Sprintf("[ERROR] Unsupported node type: %T", node))
 	}
 }
+func setDictKey(m map[ast.Node]ast.Node, key ast.Node, val ast.Node) {
+    // If the key is an int literal, search for an existing one with the same value
+    if intKey, ok := key.(*ast.IntLiteralNode); ok {
+        for existing := range m {
+            if exInt, ok := existing.(*ast.IntLiteralNode); ok && exInt.Value == intKey.Value {
+                // overwrite existing key
+                m[existing] = val
+                return
+            }
+        }
+    }
+
+    // Otherwise, just insert
+    m[key] = val
+}

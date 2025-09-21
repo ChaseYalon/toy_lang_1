@@ -322,6 +322,20 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 
 		return res
 	}
+	if node.NodeType() == ast.ArrReassign{
+		reassignNode := node.(*ast.ArrReassignNode);
+
+		arr, found := local_scope.getVar(reassignNode.Arr.Name);
+		if !found{
+			panic(fmt.Sprintf("[ERROR] Could not find array %v\n",reassignNode.Arr.Name));
+		}
+		arrLit, ok := arr.(*ast.ArrLiteralNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Variable %v is not an array\n", reassignNode.Arr.Name))
+		}
+		setDictKey(arrLit.Elems, reassignNode.Idx, reassignNode.NewVal);
+		return reassignNode.NewVal
+	}
 
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to evaluate, got %v of type %v\n", node, node.NodeType()))
 }

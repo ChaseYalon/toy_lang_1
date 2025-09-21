@@ -94,17 +94,28 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 	}
 
 	//This will cause bugs in the future, for handling nested array literals
+	contains, _ := includesItem(tokens, *token.NewToken(token.ASSIGN, "="))
+	if contains {
+		return p.parseSubExpression(tokens, subNodes)
+	}
 	if tokens[0].TokType == token.LBRACK {
+		depth := 1
 		var toks []token.Token
-		for _, val := range tokens {
-			if val.TokType == token.RBRACK {
-				toks = append(toks, val)
-				return p.parseArr(toks)
+		toks = append(toks, tokens[0])
+		for i := 1; i < len(tokens); i++ {
+			toks = append(toks, tokens[i])
+			if tokens[i].TokType == token.LBRACK {
+				depth++
+			} else if tokens[i].TokType == token.RBRACK {
+				depth--
+				if depth == 0 {
+					return p.parseArr(toks)
+				}
 			}
-			toks = append(toks, val)
 		}
 		panic(fmt.Sprintf("[ERROR] Could not find right brace corresponding to left brace, got %v\n", tokens))
 	}
+
 	return p.parseSubExpression(newTokens, subNodes)
 }
 
@@ -149,7 +160,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 	}
 	if tokens[0].TokType == token.VAR_REF && tokens[1].TokType == token.LBRACK {
 		arr := p.parseArrRef(tokens)
-		return &arr
+		return arr
 	}
 	lowestTok, lowestIndex := p.findLowestBp(p.generatePrecedenceTable(), tokens)
 	if lowestIndex == -1 {
