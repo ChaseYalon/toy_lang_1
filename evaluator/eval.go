@@ -316,8 +316,8 @@ func (i *Interpreter) callBuiltin(inode ast.Node, local_scope *Scope) ast.Node {
 
 func (i *Interpreter) executeStmt(node ast.Node, local_scope *Scope) {
 	switch node.NodeType() {
-	case ast.IntLiteral, ast.InfixExpr:
-		i.execIntExpr(node, local_scope)
+	case ast.IntLiteral, ast.InfixExpr, ast.FloatLiteral:
+		i.execExpr(node, local_scope)
 	case ast.BoolLiteral, ast.BoolInfix, ast.PrefixExpr:
 		i.execBoolExpr(node, local_scope)
 	case ast.LetStmt, ast.VarReassign:

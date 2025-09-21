@@ -345,6 +345,31 @@ func TestEvaluator(t *testing.T) {
 			output: map[string]ast.Node{
 				"x": &ast.FloatLiteralNode{Value: 3.1415},
 			},
+			id: 35,
+		},
+
+		{
+			input: "let a = 16.0 / 4.0;",
+			output: map[string]ast.Node{
+				"a": &ast.FloatLiteralNode{Value: 4.0},
+			},
+			id: 36,
+		},
+
+		{
+			input: "fn double(a){return a * 2.0;} let x = double(2.1);",
+			output: map[string]ast.Node{
+				"x": &ast.FloatLiteralNode{Value: 4.2},
+			},
+			id: 37,
+		},
+
+		{
+			input: "let x = 4.0 / 2;",
+			output: map[string]ast.Node{
+				"x": &ast.FloatLiteralNode{Value: 2.0},
+			},
+			id: 38,
 		},
 	}
 

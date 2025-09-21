@@ -113,8 +113,8 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			return &ast.StringLiteralNode{Value: tok.Literal}
 		case token.FLOAT:
 			val, err := strconv.ParseFloat(tok.Literal, 64)
-			if err != nil{
-				panic(fmt.Sprintf("[ERROR] Could not convert to floating point, got %v\n", val));
+			if err != nil {
+				panic(fmt.Sprintf("[ERROR] Could not convert to floating point, got %v\n", val))
 			}
 			return &ast.FloatLiteralNode{Value: val}
 		case token.VAR_REF:

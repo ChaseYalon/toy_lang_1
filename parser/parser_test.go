@@ -10,36 +10,191 @@ import (
 
 // deepCompare compares two AST nodes recursively
 func deepCompare(got, want ast.Node) bool {
-	if got == nil || want == nil {
-		return got == want
+	if got == nil && want == nil{
+		return true;
+	}
+	if want.NodeType() == ast.LetStmt && got.NodeType() == ast.LetStmt{
+		w := want.(*ast.LetStmtNode);
+		g := got.(*ast.LetStmtNode);
+		namesTrue := w.Name == g.Name;
+		valsTrue := deepCompare(g.Value, w.Value);
+		return namesTrue && valsTrue;
 	}
 
-	// Handle EmptyExprNode specially
-	if g, ok := got.(*ast.EmptyExprNode); ok {
+	if want.NodeType() == ast.ReferenceExpr && got.NodeType() == ast.ReferenceExpr{
+		w := want.(*ast.ReferenceExprNode);
+		g := got.(*ast.ReferenceExprNode);
+		return w.Name == g.Name;
+	}
 
-		return deepCompare(g.Child, want)
+	if want.NodeType() == ast.VarReassign && got.NodeType() == ast.VarReassign{
+		w := want.(*ast.VarReassignNode);
+		g := got.(*ast.VarReassignNode);
+		namesTrue := w.Var == g.Var;
+		valsTrue := deepCompare(g.NewVal, w.NewVal);
+		return namesTrue && valsTrue;
 	}
-	if w, ok := want.(*ast.EmptyExprNode); ok {
-		return deepCompare(got, w.Child)
+
+	if want.NodeType() == ast.InfixExpr && got.NodeType() == ast.InfixExpr{
+		w := want.(*ast.InfixExprNode);
+		g := got.(*ast.InfixExprNode);
+		
+		lEq := deepCompare(g.Left, w.Left);
+		rEq := deepCompare(g.Right, w.Right);
+		oppEq := w.Operator == g.Operator;
+		return lEq && rEq && oppEq;
 	}
-	if got.NodeType() == ast.LetStmt && want.NodeType() == ast.LetStmt {
-		g, ok := got.(*ast.LetStmtNode)
-		w, ok2 := got.(*ast.LetStmtNode)
-		if !ok && !ok2 {
-			panic("[TESTS FAILED TO RUN]")
+
+	if want.NodeType() == ast.BoolInfix && got.NodeType() == ast.BoolInfix{
+		w := want.(*ast.BoolInfixNode);
+		g := got.(*ast.BoolInfixNode);
+		
+		lEq := deepCompare(g.Left, w.Left);
+		rEq := deepCompare(g.Right, w.Right);
+		oppEq := w.Operator == g.Operator;
+		return lEq && rEq && oppEq;
+	}
+
+	if want.NodeType() == ast.PrefixExpr && got.NodeType() == ast.PrefixExpr{
+		w := want.(*ast.PrefixExprNode);
+		g := got.(*ast.PrefixExprNode);
+
+		valEq := deepCompare(g.Value, w.Value);
+		oppEq := w.Operator == g.Operator;
+		return valEq && oppEq;
+	}
+	
+	if want.NodeType() == ast.EmptyExpr && got.NodeType() == ast.EmptyExpr{
+		w := want.(*ast.EmptyExprNode);
+		g := got.(*ast.EmptyExprNode);
+		return deepCompare(g.Child, w.Child);
+	}
+
+	if want.NodeType() == ast.ReturnExpr && got.NodeType() == ast.ReturnExpr{
+		w := want.(*ast.ReturnExprNode);
+		g := got.(*ast.ReturnExprNode);
+
+		return deepCompare(g.Val, w.Val);
+	}
+
+	if want.NodeType() == ast.IntLiteral && got.NodeType() == ast.IntLiteral{
+		w := want.(*ast.IntLiteralNode);
+		g := got.(*ast.IntLiteralNode);
+
+		return w.Value == g.Value;
+	}
+
+	if want.NodeType() == ast.BoolLiteral && got.NodeType() == ast.BoolLiteral{
+		w := want.(*ast.BoolLiteralNode);
+		g := got.(*ast.BoolLiteralNode);
+
+		return w.Value == g.Value;
+	}
+
+	if want.NodeType() == ast.StringLiteral && got.NodeType() == ast.StringLiteral{
+		w := want.(*ast.StringLiteralNode);
+		g := got.(*ast.StringLiteralNode);
+
+		return w.Value == g.Value;
+	}
+
+	if want.NodeType() == ast.FloatLiteral && got.NodeType() == ast.FloatLiteral{
+		w := want.(*ast.FloatLiteralNode);
+		g := got.(*ast.FloatLiteralNode);
+
+		return w.Value == g.Value;
+	}
+
+	if want.NodeType() == ast.IfStmt && got.NodeType() == ast.IfStmt{
+		w := want.(*ast.IfStmtNode);
+		g := got.(*ast.IfStmtNode);
+
+		condEq := deepCompare(g.Cond, w.Cond);
+		bodyEq := true
+		altEq := true;
+		for i := range w.Body{
+			bodyEq = bodyEq && deepCompare(g.Body[i], w.Body[i])
 		}
-		namesEq := g.Name == w.Name
-		valueEq := deepCompare(g.Value, w.Value)
-		return namesEq && valueEq
+		if len(w.Alt) > 0{
+			for i := range w.Alt{
+				altEq = altEq && deepCompare(g.Alt[i], w.Alt[i])
+			}
+		}
+		return condEq && bodyEq && altEq;
 	}
 
-	// If types differ, they’re not equal
-	if got.NodeType() != want.NodeType() {
-		return false
+	if want.NodeType() == ast.WhileStmt && got.NodeType() == ast.WhileStmt{
+		w := want.(*ast.WhileStmtNode);
+		g := got.(*ast.WhileStmtNode);
+
+		condEq := deepCompare(g.Cond, w.Cond);
+		bodyEq := true
+		for i := range w.Body{
+			bodyEq = bodyEq && deepCompare(g.Body[i], w.Body[i])
+		}
+		return condEq && bodyEq;
 	}
 
-	// Compare string forms if node types match
-	return got.String() == want.String()
+	if want.NodeType() == ast.FuncDec && got.NodeType() == ast.FuncDec{
+		w := want.(*ast.FuncDecNode);
+		g := got.(*ast.FuncDecNode);
+
+		nameEq := w.Name == g.Name;
+		paramsEq := true;
+		for i := range w.Params{
+			paramsEq = paramsEq && deepCompare(&g.Params[i], &w.Params[i]);
+		}
+		bodyEq := true;
+		for i := range w.Body{
+			bodyEq = bodyEq && deepCompare(g.Body[i], w.Body[i]);
+		}
+		return nameEq && paramsEq && bodyEq;
+	}
+
+	if want.NodeType() == ast.FuncCall && got.NodeType() == ast.FuncCall{
+		w := want.(*ast.FuncCallNode);
+		g := got.(*ast.FuncCallNode);	
+		
+		nameEq := w.Name == g.Name;
+		paramsEq := true;
+
+		for i := range w.Params{
+			paramsEq = paramsEq && deepCompare(w.Params[i], g.Params[i]);
+		}
+		return nameEq && paramsEq;
+	}
+
+	if want.NodeType() == ast.CallBuiltin && got.NodeType() == ast.CallBuiltin{
+		w := want.(*ast.CallBuiltinNode);
+		g := got.(*ast.CallBuiltinNode);	
+		
+		nameEq := w.Name == g.Name;
+		paramsEq := true;
+
+		for i := range w.Params{
+			paramsEq = paramsEq && deepCompare(w.Params[i], g.Params[i]);
+		}
+		return nameEq && paramsEq;
+	}
+
+	if want.NodeType() == ast.ContinueStmt && got.NodeType() == ast.ContinueStmt{
+		return true;
+	}
+	if want.NodeType() == ast.BreakSmt && got.NodeType() == ast.BreakSmt{
+		return true;
+	}
+	if want.NodeType() == ast.EmptyExpr && got.NodeType() == ast.FuncCall {
+		w := want.(*ast.EmptyExprNode);
+		g := got.(*ast.FuncCallNode);
+		return deepCompare(w.Child, g);
+	}
+	if want.NodeType() == ast.FuncCall && got.NodeType() == ast.EmptyExpr{
+		w := want.(*ast.FuncCallNode);
+		g := got.(*ast.EmptyExprNode);
+		return deepCompare(w, g.Child);
+	}
+	fmt.Printf("[WARNING] HEY MORON!!!!! USING UNDEFINED TYPES IN TETS, got %v, want %v\n", got.NodeType(), want.NodeType());
+	return got.String() == want.String();
 }
 
 // compareNodes compares slices of AST nodes and prints mismatches
@@ -591,7 +746,7 @@ func TestParser(t *testing.T) {
 						Alt: []ast.Node{
 							&ast.LetStmtNode{
 								Name:  "y",
-								Value: &ast.IntLiteralNode{Value: 5},
+							Value: &ast.IntLiteralNode{Value: 5},
 							},
 						},
 					},
@@ -1063,6 +1218,7 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
+			id: 31,
 		},
 		{
 			input: "let x = 10; while x < 100{if x == 11{continue;} if x == 30{break;}}",
@@ -1103,18 +1259,98 @@ func TestParser(t *testing.T) {
 					},
 				},
 			},
-			id: 31,
+			id: 32,
 		},
 		{
 			input: "let x = 3.1415969;",
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "x",
+						Name:  "x",
 						Value: &ast.FloatLiteralNode{Value: 3.1415969},
 					},
 				},
 			},
+			id: 33,
+		},
+		{
+			input: "let x = 1.0 + 6.3; let y = 3.4 >= 9.1;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.FloatLiteralNode{Value: 1.0},
+							Operator: token.PLUS,
+							Right:    &ast.FloatLiteralNode{Value: 6.3},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "y",
+						Value: &ast.BoolInfixNode{
+							Left:     &ast.FloatLiteralNode{Value: 3.4},
+							Operator: token.GREATER_THAN_EQT,
+							Right:    &ast.FloatLiteralNode{Value: 9.1},
+						},
+					},
+				},
+			},
+			id: 34,
+		},
+		{
+			input: "let x = 3.4; let y = 3.4 ** 2.0;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.FloatLiteralNode{Value: 3.4},
+					},
+					&ast.LetStmtNode{
+						Name: "y",
+						Value: &ast.InfixExprNode{
+							Left:     &ast.FloatLiteralNode{Value: 3.4},
+							Operator: token.EXPONENT,
+							Right:    &ast.FloatLiteralNode{Value: 2.0},
+						},
+					},
+				},
+			},
+			id: 35,
+		},
+		{
+			input: "fn floatToString(f){return str(f);} let s = floatToString(9.4)",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.FuncDecNode{
+						Name:   "floatToString",
+						Params: []ast.ReferenceExprNode{{Name: "f"}},
+						Body: []ast.Node{
+							&ast.ReturnExprNode{
+								Val: &ast.EmptyExprNode{
+									Child: &ast.FuncCallNode{
+										Name: ast.ReferenceExprNode{Name: "str"},
+										Params: []ast.Node{
+											&ast.ReferenceExprNode{Name: "f"},
+										},
+									},
+								},
+							},
+						},
+					},
+					&ast.LetStmtNode{
+						Name: "s",
+						Value: &ast.EmptyExprNode{
+							Child: &ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "floatToString"},
+								Params: []ast.Node{
+									&ast.FloatLiteralNode{Value: 9.4},
+								},
+							},
+						},
+					},
+				},
+			},
+			id: 36,
 		},
 	}
 
@@ -1123,7 +1359,6 @@ func TestParser(t *testing.T) {
 		parse := NewParser()
 		toks := lex.Lex(tt.input)
 		prog := parse.Parse(toks)
-
 		compareNodes(t, prog.Statements, tt.output.Statements, tt)
 	}
 }

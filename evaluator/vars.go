@@ -29,11 +29,11 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
 	case *ast.InfixExprNode:
 		// If we get here, it's not a string operation, so it must be int
-		valNode = &ast.IntLiteralNode{Value: i.execIntExpr(v, local_scope)}
+		valNode = i.execExpr(v, local_scope);
 	case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 		valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(v, local_scope)}
 	case *ast.FloatLiteralNode:
-		valNode = v;
+		valNode = v
 	case *ast.ReferenceExprNode:
 		refVal, ok := local_scope.getVar(v.Name)
 		if !ok {
@@ -61,6 +61,8 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 			valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(r, local_scope)}
 		case *ast.StringLiteralNode:
 			valNode = &ast.StringLiteralNode{Value: i.execStringExpr(r, local_scope)}
+		case *ast.FloatLiteralNode:
+			valNode = &ast.FloatLiteralNode{Value: i.execFloatExpr(r, local_scope)}
 		default:
 			panic(fmt.Sprintf("[ERROR] Unsupported return type from function: %T", r))
 		}

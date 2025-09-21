@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"math"
 	"toy_lang/ast"
 	"toy_lang/token"
 )
@@ -143,17 +144,124 @@ func (i *Interpreter) execBoolExpr(inode ast.Node, local_scope *Scope) bool {
 	panic(fmt.Sprintf("[ERROR] Unknown bool expression: %v", node))
 }
 
+func (i *Interpreter) execFloatExpr(inode ast.Node, local_scope *Scope) float64{
+	var node ast.Node = inode
+
+	if emptyNode, ok := inode.(*ast.EmptyExprNode); ok {
+		node = emptyNode.Child
+	}
+
+	switch node := node.(type) {
+	case *ast.FloatLiteralNode:
+		return node.Value
+	case *ast.IntLiteralNode:
+		intNode, ok := inode.(*ast.IntLiteralNode);
+		if !ok{
+			panic(fmt.Sprintf("[ERROR] Could not convert to int, got %v\n", inode));
+		}
+		return float64(intNode.Value);
+	case *ast.ReferenceExprNode:
+		val, ok := local_scope.getVar(node.Name)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Undefined variable %s", node.Name))
+		}
+		intNode, ok := val.(*ast.FloatLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Expected int, got %v", val))
+		}
+		return intNode.Value
+	case *ast.FuncCallNode:
+		result := i.execFuncCall(node, local_scope)
+		if result == nil {
+			panic(fmt.Sprintf("[ERROR] Function %s did not return a value", node.Name.Name))
+		}
+		intNode, ok := result.(*ast.FloatLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Expected int return from function, got %v", result))
+		}
+		return intNode.Value
+	case *ast.InfixExprNode:
+		switch node.Operator {
+		case token.PLUS:
+			return i.execFloatExpr(node.Left, local_scope) + i.execFloatExpr(node.Right, local_scope)
+		case token.MINUS:
+			return i.execFloatExpr(node.Left, local_scope) - i.execFloatExpr(node.Right, local_scope)
+		case token.MULTIPLY:
+			return i.execFloatExpr(node.Left, local_scope) * i.execFloatExpr(node.Right, local_scope)
+		case token.DIVIDE:
+			return i.execFloatExpr(node.Left, local_scope) / i.execFloatExpr(node.Right, local_scope)
+		case token.MODULO:
+			return math.Mod(i.execFloatExpr(node.Left, local_scope), i.execFloatExpr(node.Right, local_scope));
+		case token.EXPONENT:
+			return math.Pow(i.execFloatExpr(node.Left, local_scope), i.execFloatExpr(node.Right, local_scope))
+		}
+	}
+	panic(fmt.Sprintf("[ERROR] Unknown float expression: %v", node))
+}
+
+func (i *Interpreter) isFloatExpr(node ast.InfixExprNode, local_scope *Scope) bool {
+	leftIsFloat := false
+	rightIsFloat := false
+
+	// direct float literals
+	if node.Left.NodeType() == ast.FloatLiteral {
+		leftIsFloat = true
+	}
+	if node.Right.NodeType() == ast.FloatLiteral {
+		rightIsFloat = true
+	}
+
+	// variable references
+	if node.Left.NodeType() == ast.ReferenceExpr {
+		if refExpr, ok := node.Left.(*ast.ReferenceExprNode); ok {
+			if lVar, found := local_scope.getVar(refExpr.Name); found {
+				if lVar.NodeType() == ast.FloatLiteral {
+					leftIsFloat = true
+				}
+			}
+		}
+	}
+	if node.Right.NodeType() == ast.ReferenceExpr {
+		if refExpr, ok := node.Right.(*ast.ReferenceExprNode); ok {
+			if rVar, found := local_scope.getVar(refExpr.Name); found {
+				if rVar.NodeType() == ast.FloatLiteral {
+					rightIsFloat = true
+				}
+			}
+		}
+	}
+
+	// recurse only when the child is another infix expression
+	if !rightIsFloat {
+		if rightNode, ok := node.Right.(*ast.InfixExprNode); ok {
+			rightIsFloat = i.isFloatExpr(*rightNode, local_scope)
+		}
+	}
+	if !leftIsFloat {
+		if leftNode, ok := node.Left.(*ast.InfixExprNode); ok {
+			leftIsFloat = i.isFloatExpr(*leftNode, local_scope)
+		}
+	}
+
+	// expression is float if either side is float
+	return leftIsFloat || rightIsFloat
+}
+
+
 func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 	if node.NodeType() == ast.IntLiteral {
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}
+	if node.NodeType() == ast.FloatLiteral{
+		return &ast.FloatLiteralNode{Value: i.execFloatExpr(node, local_scope)};
+	}
 	if node.NodeType() == ast.InfixExpr {
 		infixNode, ok := node.(*ast.InfixExprNode)
-		if ok && infixNode.Operator == token.PLUS {
-			if i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope) {
-				return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
-			}
-			return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
+		if i.isStringExpression(infixNode.Left, local_scope) || i.isStringExpression(infixNode.Right, local_scope) && (ok && infixNode.Operator == token.PLUS ) {
+			return &ast.StringLiteralNode{Value: i.execStringExpr(node, local_scope)}
+		}
+		if i.isFloatExpr(*infixNode, local_scope){
+			return &ast.FloatLiteralNode{Value: i.execFloatExpr(infixNode, local_scope)};
 		}
 		return &ast.IntLiteralNode{Value: i.execIntExpr(node, local_scope)}
 	}

@@ -40,8 +40,8 @@ Roadmap:
     c. Continue --Done
 9. Floating points and misc
     a. Floating point literals --Done
-    b. Floating point arithmetic and parameters
-    c. Type promotion
+    b. Floating point arithmetic and parameters --Done
+    c. Type promotion --Done
     d. Recursion
 10. Arrays/Lists/Slices (tbd)
 11. User defined data types (structs/classes)

@@ -16,6 +16,7 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.INTEGER:          100, // Boolean, int, string, and var ref should never be "bound to"
 		token.STRING:           100,
 		token.VAR_REF:          100,
+		token.FLOAT:            100,
 		token.AND:              4,
 		token.OR:               4,
 		token.NOT:              5, // Logical operators have lower precedence than arithmetic, not is lowest
