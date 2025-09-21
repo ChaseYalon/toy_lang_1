@@ -392,7 +392,7 @@ func (n *FloatLiteralNode) String() string {
 
 // Arrays are hashmaps under the hood arr["hi"] = true is totally valid
 type ArrLiteralNode struct {
-	Elems map[Node]Node
+	Elems map[string]Node
 }
 
 func (n *ArrLiteralNode) NodeType() AstNode {

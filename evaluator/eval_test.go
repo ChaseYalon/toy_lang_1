@@ -50,7 +50,7 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 				for wantKey, wantVal := range wantMap.Elems {
 					found := false
 					for gotKey, gotVal := range gotMap.Elems {
-						if gotKey.String() == wantKey.String() && gotVal.String() == wantVal.String() {
+						if gotKey == wantKey && gotVal.String() == wantVal.String() {
 							found = true
 							break
 						}
@@ -421,10 +421,10 @@ func TestEvaluator(t *testing.T) {
 			input: `let arr = [1, 2, 3];`,
 			output: map[string]ast.Node{
 				"arr": &ast.ArrLiteralNode{
-					Elems: map[ast.Node]ast.Node{
-						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
-						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
-						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+					Elems: map[string]ast.Node{
+						(&ast.IntLiteralNode{Value: 0}).String(): &ast.IntLiteralNode{Value: 1},
+						(&ast.IntLiteralNode{Value: 1}).String(): &ast.IntLiteralNode{Value: 2},
+						(&ast.IntLiteralNode{Value: 2}).String(): &ast.IntLiteralNode{Value: 3},
 					},
 				},
 			},
@@ -435,10 +435,10 @@ func TestEvaluator(t *testing.T) {
 			input: "let arr = [1, 2, 3]; let x = arr[2];",
 			output: map[string]ast.Node{
 				"arr": &ast.ArrLiteralNode{
-					Elems: map[ast.Node]ast.Node{
-						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
-						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
-						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+					Elems: map[string]ast.Node{
+						(&ast.IntLiteralNode{Value: 0}).String(): &ast.IntLiteralNode{Value: 1},
+						(&ast.IntLiteralNode{Value: 1}).String(): &ast.IntLiteralNode{Value: 2},
+						(&ast.IntLiteralNode{Value: 2}).String(): &ast.IntLiteralNode{Value: 3},
 					},
 				},
 				"x": &ast.IntLiteralNode{Value: 3},
@@ -450,10 +450,10 @@ func TestEvaluator(t *testing.T) {
 			input: "let arr = [1, 2, 3]; arr[2] = 4;",
 			output: map[string]ast.Node{
 				"arr": &ast.ArrLiteralNode{
-					Elems: map[ast.Node]ast.Node{
-						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
-						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
-						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 4},
+					Elems: map[string]ast.Node{
+						(&ast.IntLiteralNode{Value: 0}).String(): &ast.IntLiteralNode{Value: 1},
+						(&ast.IntLiteralNode{Value: 1}).String(): &ast.IntLiteralNode{Value: 2},
+						(&ast.IntLiteralNode{Value: 2}).String(): &ast.IntLiteralNode{Value: 4},
 					},
 				},
 			},

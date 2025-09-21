@@ -333,7 +333,7 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		if !ok{
 			panic(fmt.Sprintf("[ERROR] Variable %v is not an array\n", reassignNode.Arr.Name))
 		}
-		setDictKey(arrLit.Elems, reassignNode.Idx, reassignNode.NewVal);
+		arrLit.Elems[reassignNode.Idx.String()] = reassignNode.NewVal;
 		return reassignNode.NewVal
 	}
 

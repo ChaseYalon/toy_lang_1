@@ -70,7 +70,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		valNode = &ast.StringLiteralNode{Value: i.execStringExpr(v, local_scope)}
 	case *ast.ArrLiteralNode:
 		arrNode := value.(*ast.ArrLiteralNode)
-		elems := make(map[ast.Node]ast.Node)
+		elems := make(map[string]ast.Node)
 		for key, val := range arrNode.Elems {
 			elems[key] = i.execExpr(val, local_scope)
 		}
@@ -90,7 +90,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		var val ast.Node
 		idxStr := i.execExpr(refNode.Idx, local_scope).String()
 		for key, value := range arrMap.Elems {
-			if key.String() == idxStr {
+			if key == idxStr {
 				val = value
 				break
 			}
@@ -135,19 +135,4 @@ func (i *Interpreter) changeVarVal(node ast.Node, local_scope *Scope) {
 	default:
 		panic(fmt.Sprintf("[ERROR] Unsupported node type: %T", node))
 	}
-}
-func setDictKey(m map[ast.Node]ast.Node, key ast.Node, val ast.Node) {
-    // If the key is an int literal, search for an existing one with the same value
-    if intKey, ok := key.(*ast.IntLiteralNode); ok {
-        for existing := range m {
-            if exInt, ok := existing.(*ast.IntLiteralNode); ok && exInt.Value == intKey.Value {
-                // overwrite existing key
-                m[existing] = val
-                return
-            }
-        }
-    }
-
-    // Otherwise, just insert
-    m[key] = val
 }
