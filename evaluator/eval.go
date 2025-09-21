@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"math/rand"
+
 	"strconv"
 	"strings"
 	"toy_lang/ast"
@@ -107,7 +109,30 @@ func NewInterpreter() Interpreter {
 			},
 		},
 	}
-
+	builtinScope.Funcs["randInt"] = ast.FuncDecNode{
+		Name: "randInt",
+		Params: []ast.ReferenceExprNode{{Name: "min"}, {Name: "max"}},
+		Body: []ast.Node{
+			&ast.ReturnExprNode{
+				Val: &ast.CallBuiltinNode{
+					Name: "randInt",
+					Params: []ast.Node{&ast.ReferenceExprNode{Name: "min"}, &ast.ReferenceExprNode{Name: "max"}},
+				},
+			},
+		},
+	}
+	builtinScope.Funcs["randf"] = ast.FuncDecNode{
+		Name: "randf",
+		Params: []ast.ReferenceExprNode{{Name: "min"}, {Name: "max"}},
+		Body: []ast.Node{
+			&ast.ReturnExprNode{
+				Val: &ast.CallBuiltinNode{
+					Name: "randf",
+					Params: []ast.Node{&ast.ReferenceExprNode{Name: "min"}, &ast.ReferenceExprNode{Name: "max"}},
+				},
+			},
+		},
+	}
 	return Interpreter{
 		MainScope: *ms,
 		reader:    bufio.NewReader(os.Stdin),
@@ -250,6 +275,8 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 			output = strconv.Itoa(v.Value)
 		case *ast.BoolLiteralNode:
 			output = strconv.FormatBool(v.Value)
+		case *ast.FloatLiteralNode:
+			output = strconv.FormatFloat(v.Value, 'f',-1, 64);
 		default:
 			panic(fmt.Sprintf("[ERROR] Cannot print value of type %v", val))
 		}
@@ -317,6 +344,38 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 		default:
 			panic(fmt.Sprintf("[ERROR] Cannot convert type %v to bool", toConv.NodeType()))
 		}
+	case "randInt":
+		min := i.execIntExpr(inode.Params[0], local_scope);
+		max := i.execIntExpr(inode.Params[1], local_scope);
+		//rand.Seed(time.Now().UnixNano())
+		n := rand.Intn(max - min+1) + min;
+		return &ast.IntLiteralNode{Value: n}
+
+
+	case "randf":
+		min := i.execExpr(inode.Params[0], local_scope);
+		max := i.execExpr(inode.Params[1], local_scope);
+		var minVal float64 = 0.0;
+		var maxVal float64 = 0.0;
+
+		if min.NodeType() == ast.FloatLiteral{
+			minF := min.(*ast.FloatLiteralNode);
+			minVal = minF.Value;
+		}
+		if min.NodeType() == ast.IntLiteral{
+			minI := min.(*ast.IntLiteralNode);
+			minVal = float64(minI.Value);
+		}
+		if max.NodeType() == ast.FloatLiteral{
+			maxF := max.(*ast.FloatLiteralNode);
+			maxVal = maxF.Value;
+		}
+		if max.NodeType() == ast.IntLiteral{
+			maxI := max.(*ast.IntLiteralNode);
+			maxVal = float64(maxI.Value);
+		}
+		return &ast.FloatLiteralNode{Value : minVal + rand.Float64()*(maxVal - minVal)}
+
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", inode.Name))
 }

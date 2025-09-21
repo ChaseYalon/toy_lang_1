@@ -42,7 +42,7 @@ Roadmap:
     a. Floating point literals --Done
     b. Floating point arithmetic and parameters --Done
     c. Type promotion --Done
-    d. Recursion
+    d. Recursion --Done
 10. Arrays/Lists/Slices (tbd)
 11. User defined data types (structs/classes)
 12. Macros
