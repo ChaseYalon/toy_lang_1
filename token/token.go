@@ -22,6 +22,8 @@ const (
 	LPAREN
 	RPAREN
 	COMMA
+	LBRACK
+	RBRACK
 	//User names
 	VAR_REF
 	VAR_NAME
@@ -158,6 +160,10 @@ func (t TokenType) String() string {
 		return "EXPONENT"
 	case FLOAT:
 		return "FLOAT"
+	case LBRACK:
+		return "LBRACK"
+	case RBRACK:
+		return "RBRACK"
 	default:
 		return "UNKNOWN"
 	}

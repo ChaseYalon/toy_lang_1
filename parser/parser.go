@@ -93,6 +93,18 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 		}
 	}
 
+	//This will cause bugs in the future, for handling nested array literals
+	if tokens[0].TokType == token.LBRACK{
+		var toks []token.Token;
+		for _, val := range tokens{
+			if val.TokType == token.RBRACK{
+				toks = append(toks, val);
+				return p.parseArr(toks);
+			}
+			toks = append(toks, val);
+		}
+		panic(fmt.Sprintf("[ERROR] Could not find right brace corresponding to left brace, got %v\n", tokens));
+	}
 	return p.parseSubExpression(newTokens, subNodes)
 }
 
@@ -129,6 +141,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 				panic("[ERROR] EMPTY token without corresponding subnode")
 			}
 			return subNodes[0]
+		
 		default:
 			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
 		}

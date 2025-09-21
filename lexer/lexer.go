@@ -248,6 +248,14 @@ func (l *Lexer) Lex(s string) []token.Token {
 			} else {
 				l.tokens = append(l.tokens, *token.NewToken(token.LESS_THAN, "<"))
 			}
+		case ch == '[':
+			l.flushNum();
+			l.flushStr();
+			l.tokens = append(l.tokens, *token.NewToken(token.LBRACK, "["))
+		case ch == ']':
+			l.flushNum();
+			l.flushStr();
+			l.tokens = append(l.tokens, *token.NewToken(token.RBRACK, "]"));
 		case ch == '&' && l.peek(1) == '&':
 			l.flushNum()
 			l.flushStr()

@@ -38,6 +38,32 @@ func compareVMap(t *testing.T, got map[string]ast.Node, want map[string]ast.Node
 			stderr += fmt.Sprintf("[FAIL] Missing variable %s in got map", key)
 			continue
 		}
+		if wantVal.NodeType() == ast.ArrLiteral && gotVal.NodeType() == ast.ArrLiteral {
+			gotMap := gotVal.(*ast.ArrLiteralNode)
+			wantMap := wantVal.(*ast.ArrLiteralNode)
+			
+			// check lengths first
+			if len(gotMap.Elems) != len(wantMap.Elems) {
+				stderr += fmt.Sprintf("[FAIL] Wanted array length %d, got %d", len(wantMap.Elems), len(gotMap.Elems))
+			} else {
+				// structural comparison
+				for wantKey, wantVal := range wantMap.Elems {
+					found := false
+					for gotKey, gotVal := range gotMap.Elems {
+						if gotKey.String() == wantKey.String() && gotVal.String() == wantVal.String() {
+							found = true
+							break
+						}
+					}
+					if !found {
+						stderr += fmt.Sprintf("[FAIL] Missing element %v=%v in array", wantKey, wantVal)
+					}
+				}
+			}
+			// Skip the string comparison for arrays since we did structural comparison
+			continue
+		}
+
 		if gotVal.String() != wantVal.String() {
 			stderr += fmt.Sprintf("[FAIL] Wanted %v = %v, Got %v = %v", key, wantVal, key, gotVal)
 		}
@@ -388,6 +414,20 @@ func TestEvaluator(t *testing.T) {
 				"res": &ast.IntLiteralNode{Value: 720},
 			},
 			id: 39,
+		},
+		
+		{
+			input: `let arr = [1, 2, 3];`,
+			output: map[string]ast.Node{
+				"arr": &ast.ArrLiteralNode{
+					Elems: map[ast.Node]ast.Node{
+						&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
+						&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
+						&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+					},
+				},
+			},
+			id: 40,
 		},
 	}
 

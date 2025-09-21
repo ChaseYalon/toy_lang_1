@@ -44,6 +44,11 @@ Roadmap:
     c. Type promotion --Done
     d. Recursion --Done
 10. Arrays/Lists/Slices (tbd)
+    a. Array Literal
+    b. Accessing individual values
+    c. Reassigning individual values
+    d. Non int keys
+    e. Methods
 11. User defined data types (structs/classes)
 12. Macros
 

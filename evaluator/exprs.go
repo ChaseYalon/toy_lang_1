@@ -269,11 +269,11 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		res := i.callBuiltin(node, local_scope)
 		if res.NodeType() == ast.BoolLiteral {
 
-			bres, ok := res.(*ast.BoolLiteralNode)
+			bRes, ok := res.(*ast.BoolLiteralNode)
 			if !ok {
 				panic(fmt.Sprintf("[ERROR] Expected bool return, got %v\n", res))
 			}
-			return bres
+			return bRes
 		}
 		if res.NodeType() == ast.IntLiteral {
 			ires, ok := res.(*ast.IntLiteralNode)
@@ -283,11 +283,11 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 			return ires
 		}
 		if res.NodeType() == ast.StringLiteral {
-			sres, ok := res.(*ast.StringLiteralNode)
+			sRes, ok := res.(*ast.StringLiteralNode)
 			if !ok {
 				panic(fmt.Sprintf("[ERROR] Expected string return, got %v\n", res))
 			}
-			return sres
+			return sRes
 		}
 	}
 

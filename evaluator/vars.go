@@ -68,6 +68,13 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 		}
 	case *ast.StringLiteralNode:
 		valNode = &ast.StringLiteralNode{Value: i.execStringExpr(v, local_scope)}
+	case *ast.ArrLiteralNode:
+		arrNode := value.(*ast.ArrLiteralNode);
+		elems := make(map[ast.Node]ast.Node);
+		for key, val := range arrNode.Elems{
+			elems[key] = i.execExpr(val, local_scope);
+		}
+		valNode = &ast.ArrLiteralNode{Elems: elems};
 	default:
 		panic(fmt.Sprintf("[ERROR] Unknown value type: %v, type: %v\n", value, value.NodeType()))
 	}

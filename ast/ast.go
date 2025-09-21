@@ -38,6 +38,7 @@ const (
 	BoolLiteral
 	StringLiteral
 	FloatLiteral
+	ArrLiteral
 
 	//Statements
 	IfStmt
@@ -378,4 +379,22 @@ func (n *FloatLiteralNode)NodeType() AstNode{
 }
 func (n *FloatLiteralNode)String() string{
 	return fmt.Sprintf("FLOAT(%g)", n.Value);
+}
+
+//Arrays are hashmaps under the hood arr["hi"] = true is totally valid
+type ArrLiteralNode struct{
+	Elems map[Node]Node
+
+}
+func (n *ArrLiteralNode)NodeType() AstNode{
+	return ArrLiteral
+}
+func (n *ArrLiteralNode)String() string{
+	str := "["
+	for key, val := range n.Elems{
+		str += fmt.Sprintf("{%v : %v},", key, val);
+	}
+	str = str[:len(str)-1];
+	str += "]";
+	return str;
 }

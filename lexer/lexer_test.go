@@ -710,6 +710,23 @@ func TestLexer(t *testing.T) {
 			},
 			id: 33,
 		},
+		{
+			input: "let arr = [1, 2, 3];",
+			output: []token.Token{
+				*token.NewToken(token.LET, "let"),
+				*token.NewToken(token.VAR_NAME, "arr"),
+				*token.NewToken(token.ASSIGN, "="),
+				*token.NewToken(token.LBRACK, "["),
+				*token.NewToken(token.INTEGER, "1"),
+				*token.NewToken(token.COMMA, ","),
+				*token.NewToken(token.INTEGER, "2"),
+				*token.NewToken(token.COMMA, ","),
+				*token.NewToken(token.INTEGER, "3"),
+				*token.NewToken(token.RBRACK, "]"),
+				*token.NewToken(token.SEMICOLON, ";"),
+			},
+			id: 34,
+		},
 	}
 	for _, tt := range tests {
 		res := lex.Lex(tt.input)

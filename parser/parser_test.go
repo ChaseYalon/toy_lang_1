@@ -1352,6 +1352,24 @@ func TestParser(t *testing.T) {
 			},
 			id: 36,
 		},
+		{
+			input: "let arr = [1, 2, 3];",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "arr",
+						Value: &ast.ArrLiteralNode{
+							Elems: map[ast.Node]ast.Node{
+								&ast.IntLiteralNode{Value: 0}: &ast.IntLiteralNode{Value: 1},
+								&ast.IntLiteralNode{Value: 1}: &ast.IntLiteralNode{Value: 2},
+								&ast.IntLiteralNode{Value: 2}: &ast.IntLiteralNode{Value: 3},
+							},
+						},
+					},
+				},
+			},
+			id: 37,
+		},
 	}
 
 	for _, tt := range tests {
