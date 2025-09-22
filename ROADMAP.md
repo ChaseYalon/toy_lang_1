@@ -43,15 +43,16 @@ Roadmap:
     b. Floating point arithmetic and parameters --Done
     c. Type promotion --Done
     d. Recursion --Done
-10. Arrays (HashMaps)
+10. Arrays (HashMaps) / User defined structs
     a. Array Literal  --Done
     b. Accessing individual values --Done
-    c. Reassigning individual values
-    d. Non int keys
-    e. Methods
-11. User defined data types (structs/classes)
-12. Macros
-
+    c. Reassigning individual values --Done
+    d. Non int keys --Done
+    e. Methods??
+11. Misc
+    a. More builtins
+    b. Squash some bugs
+    c. Better errors?????
 Notes:
 I have decided not to do elsif, can do it later but if()elsif()else() can just be if()else(if());
 I have also decided not to do for because I am a lazy fuck
