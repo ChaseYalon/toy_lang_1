@@ -322,20 +322,42 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 
 		return res
 	}
-	if node.NodeType() == ast.ArrReassign{
-		reassignNode := node.(*ast.ArrReassignNode);
+	if node.NodeType() == ast.ArrReassign {
+		reassignNode := node.(*ast.ArrReassignNode)
 
-		arr, found := local_scope.getVar(reassignNode.Arr.Name);
-		if !found{
-			panic(fmt.Sprintf("[ERROR] Could not find array %v\n",reassignNode.Arr.Name));
+		arr, found := local_scope.getVar(reassignNode.Arr.Name)
+		if !found {
+			panic(fmt.Sprintf("[ERROR] Could not find array %v\n", reassignNode.Arr.Name))
 		}
-		arrLit, ok := arr.(*ast.ArrLiteralNode);
-		if !ok{
+		arrLit, ok := arr.(*ast.ArrLiteralNode)
+		if !ok {
 			panic(fmt.Sprintf("[ERROR] Variable %v is not an array\n", reassignNode.Arr.Name))
 		}
-		arrLit.Elems[reassignNode.Idx.String()] = reassignNode.NewVal;
-		return reassignNode.NewVal
+
+		idxVal := i.execExpr(reassignNode.Idx, local_scope)
+		key := idxVal.String() 
+
+		arrLit.Elems[key] = i.execExpr(reassignNode.NewVal, local_scope);
+		return i.execExpr(reassignNode.NewVal, local_scope);
+}
+
+	if node.NodeType() == ast.ArrRef {
+		refNode := node.(*ast.ArrRefNode)
+		arr, found := local_scope.getVar(refNode.Arr.Name)
+		if !found {
+			panic(fmt.Sprintf("[ERROR] Could not find array %v\n", refNode.Arr.Name))
+		}
+		arrLit, ok := arr.(*ast.ArrLiteralNode)
+		if !ok {
+			panic(fmt.Sprintf("[ERROR] Variable %v is not an array\n", refNode.Arr.Name))
+		}
+
+		idxVal := i.execExpr(refNode.Idx, local_scope)
+		key := idxVal.String()
+
+		return arrLit.Elems[key]
 	}
+
 
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to evaluate, got %v of type %v\n", node, node.NodeType()))
 }

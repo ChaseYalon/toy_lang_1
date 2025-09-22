@@ -35,17 +35,25 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 	case *ast.FloatLiteralNode:
 		valNode = v
 	case *ast.ReferenceExprNode:
-		refVal, ok := local_scope.getVar(v.Name)
+		refValO, ok := local_scope.getVar(v.Name)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Undefined variable %s of type %v\n", v.Name, v.NodeType()))
 		}
-		switch refVal := refVal.(type) {
+		switch refVal := refValO.(type) {
 		case *ast.IntLiteralNode, *ast.InfixExprNode:
 			valNode = &ast.IntLiteralNode{Value: i.execIntExpr(refVal, local_scope)}
 		case *ast.BoolLiteralNode, *ast.BoolInfixNode, *ast.PrefixExprNode:
 			valNode = &ast.BoolLiteralNode{Value: i.execBoolExpr(refVal, local_scope)}
 		case *ast.StringLiteralNode:
 			valNode = &ast.StringLiteralNode{Value: i.execStringExpr(refVal, local_scope)}
+		case *ast.ArrLiteralNode:
+
+			arrNode := refValO.(*ast.ArrLiteralNode)
+			elems := make(map[string]ast.Node)
+			for key, val := range arrNode.Elems {
+				elems[key] = i.execExpr(val, local_scope)
+			}
+			valNode = &ast.ArrLiteralNode{Elems: elems}		
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}

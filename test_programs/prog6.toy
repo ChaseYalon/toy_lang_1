@@ -1,0 +1,10 @@
+let num = 5;
+if num > 0{
+    if num < 10{
+        println("single digit positive"); /* Should print */
+    } else {
+        println("large positive");
+    }
+} else {
+    println("non-positive");
+}

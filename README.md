@@ -62,6 +62,8 @@ let y = 2 < 3;
     - str(bool | int) converts a bool or int to a string
     - bool(str | int) converts a string or an int to a bool
     - int(str | bool) converts a string or bool to an int
+    - randInt(min, max) returns a random integer [min, max)
+    - randF(min, max) returns a random float [min, max)
 
 Get a user input, add 2 and print it like this
 ```toy
@@ -123,3 +125,14 @@ while y > 0{
 }
 
 ```
+Toy lang supports arrays and dictionaries
+```toy
+
+let arr = [1, 2, 3];
+arr["hello"] = "hi"
+
+println(arr); /*Returns [{INT(1) : INT(2)},{INT(2) : INT(3)},{STRING(hello) : STRING(hi)},{INT(0) : INT(1)}] */
+
+```
+
+Toy lang comments are opened with /* and closed with */

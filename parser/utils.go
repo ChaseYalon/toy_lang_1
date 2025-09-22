@@ -99,3 +99,14 @@ func includesItem(arr []token.Token, tok token.Token) (bool, int) {
 	}
 	return false, -1
 }
+
+func includesAny(arr []token.Token, checkFor []token.TokenType)(bool, int){
+	for i, val := range arr{
+		for _, val2 := range checkFor{
+			if val2 == val.TokType{
+				return true, i;
+			}
+		}
+	}
+	return false, -1;
+}

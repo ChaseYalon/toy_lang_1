@@ -183,15 +183,13 @@ func deepCompare(got, want ast.Node) bool {
 	if want.NodeType() == ast.BreakSmt && got.NodeType() == ast.BreakSmt {
 		return true
 	}
-	if want.NodeType() == ast.EmptyExpr && got.NodeType() == ast.FuncCall {
+	if want.NodeType() == ast.EmptyExpr && got.NodeType() != ast.EmptyExpr {
 		w := want.(*ast.EmptyExprNode)
-		g := got.(*ast.FuncCallNode)
-		return deepCompare(w.Child, g)
+		return deepCompare(w.Child, got)
 	}
-	if want.NodeType() == ast.FuncCall && got.NodeType() == ast.EmptyExpr {
-		w := want.(*ast.FuncCallNode)
+	if want.NodeType() != ast.EmptyExpr && got.NodeType() == ast.EmptyExpr {
 		g := got.(*ast.EmptyExprNode)
-		return deepCompare(w, g.Child)
+		return deepCompare(want, g.Child)
 	}
 	if want.NodeType() == ast.ArrLiteral && got.NodeType() == ast.ArrLiteral {
 		gotMap := got.(*ast.ArrLiteralNode)
@@ -235,6 +233,7 @@ func deepCompare(got, want ast.Node) bool {
 		return arrEq && idxEq && valEq
 
 	}
+
 	fmt.Printf("[WARNING] HEY MORON!!!!! USING UNDEFINED TYPES IN TETS, got %v, want %v\n", got.NodeType(), want.NodeType())
 	return got.String() == want.String()
 }
@@ -1459,6 +1458,139 @@ func TestParser(t *testing.T) {
 				},
 			},
 			id: 39,
+		},
+		{
+			input: `let num = 5;
+					if num > 0{
+						if num < 10{
+							println("single digit positive"); /* Should print */
+						} else {
+							println("large positive");
+						}
+					} else {
+						println("non-positive");
+					}`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "num",
+						Value: &ast.IntLiteralNode{Value: 5},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.ReferenceExprNode{Name: "num"},
+							Operator: token.GREATER_THAN,
+							Right: &ast.IntLiteralNode{Value: 0},
+						},
+						Body: []ast.Node{
+							&ast.IfStmtNode{
+								Cond: &ast.BoolInfixNode{
+									Left: &ast.ReferenceExprNode{Name: "num"},
+									Operator: token.LESS_THAN,
+									Right: &ast.IntLiteralNode{Value: 10},
+								},
+								Body: []ast.Node{
+									&ast.FuncCallNode{
+										Name: ast.ReferenceExprNode{Name: "println"},
+										Params: []ast.Node{&ast.StringLiteralNode{Value: "single digit positive"}},
+									},
+								},
+								Alt: []ast.Node{
+									&ast.FuncCallNode{
+										Name: ast.ReferenceExprNode{Name: "println"},
+										Params: []ast.Node{&ast.StringLiteralNode{Value: "large positive"}},
+									},
+								},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "println"},
+								Params: []ast.Node{&ast.StringLiteralNode{Value: "non-positive"}},
+							},
+						},
+
+					},
+				},
+			},
+			id: 40,
+		},
+		{
+			input: `
+let arr = [];
+let n = 0;
+while n < 3{
+	arr[n] = n * 2;
+	n++;
+}
+if arr[0] == 0{
+	println("pass");
+} else {
+	println("fail");
+}
+					`,
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "arr",
+						Value: &ast.ArrLiteralNode{ Elems: map[string]ast.Node{}, },
+					},
+					
+					&ast.LetStmtNode{
+						Name: "n",
+						Value: &ast.IntLiteralNode{Value: 0},
+					},
+					&ast.WhileStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.ReferenceExprNode{Name: "n"},
+							Operator: token.LESS_THAN,
+							Right: &ast.IntLiteralNode{Value: 3},
+						},
+						Body: []ast.Node{
+							&ast.ArrReassignNode{
+								Arr: ast.ReferenceExprNode{Name: "arr"},
+								Idx: &ast.ReferenceExprNode{Name: "n"},
+								NewVal: &ast.InfixExprNode{
+									Left: &ast.ReferenceExprNode{Name: "n"},
+									Operator: token.MULTIPLY,
+									Right: &ast.IntLiteralNode{Value: 2},
+								},
+							},
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "n"},
+								NewVal: &ast.InfixExprNode{
+									Left: &ast.ReferenceExprNode{Name: "n"},
+									Operator: token.PLUS,
+									Right: &ast.IntLiteralNode{Value: 1},
+								},
+							},
+						},
+					},
+					&ast.IfStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left: &ast.ArrRefNode{
+								Arr: ast.ReferenceExprNode{Name: "arr"},
+								Idx: &ast.IntLiteralNode{Value: 0},
+							},
+							Operator: token.EQUALS,
+							Right: &ast.IntLiteralNode{Value: 0},
+						},
+						Body: []ast.Node{
+							&ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "println"},
+								Params: []ast.Node{&ast.StringLiteralNode{Value: "pass"}},
+							},
+						},
+						Alt: []ast.Node{
+							&ast.FuncCallNode{
+								Name: ast.ReferenceExprNode{Name: "println"},
+								Params: []ast.Node{&ast.StringLiteralNode{Value: "fail"}},
+							},
+						},
+					},
+				},
+			},
+			id: 41,
 		},
 	}
 

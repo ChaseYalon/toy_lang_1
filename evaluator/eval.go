@@ -288,8 +288,9 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 			output = strconv.FormatBool(v.Value)
 		case *ast.FloatLiteralNode:
 			output = strconv.FormatFloat(v.Value, 'f', -1, 64)
+		case *ast.ArrLiteralNode:
 		default:
-			panic(fmt.Sprintf("[ERROR] Cannot print value of type %v", val))
+			output = val.String();
 		}
 		if inode.Name == "print" {
 			fmt.Print(output)

@@ -10,6 +10,7 @@ import (
 type Parser struct {
 	program ast.ProgramNode
 	tokens  []token.Token
+	ifStack []*ast.IfStmtNode
 }
 
 func NewParser() *Parser {
@@ -18,6 +19,7 @@ func NewParser() *Parser {
 			Statements: []ast.Node{},
 		},
 		tokens: []token.Token{},
+		ifStack: []*ast.IfStmtNode{},
 	}
 }
 
@@ -27,14 +29,13 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 	}
 
 	var newTokens []token.Token
-	var subNodes []*ast.EmptyExprNode // track nodes corresponding to EMPTY tokens
+	var subNodes []*ast.EmptyExprNode
 
 	i := 0
 	for i < len(tokens) {
 		tok := tokens[i]
 
 		if tok.TokType == token.VAR_REF && i+1 < len(tokens) && tokens[i+1].TokType == token.LPAREN {
-			// Find matching RPAREN for function call
 			depth := 1
 			j := i + 2
 			for j < len(tokens) && depth > 0 {
@@ -49,19 +50,14 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 				panic("[ERROR] Mismatched parentheses in function call")
 			}
 
-			// Parse the function call
 			funcCall := p.parseFuncCallStmt(tokens[i:j])
 			emptyNode := &ast.EmptyExprNode{Child: funcCall}
 
-			// Add placeholder token to newTokens
 			newTokens = append(newTokens, *token.NewToken(token.EMPTY, ""))
-
-			// Track the corresponding node
 			subNodes = append(subNodes, emptyNode)
 
 			i = j
 		} else if tok.TokType == token.LPAREN {
-			// Find matching RPAREN
 			depth := 1
 			j := i + 1
 			for j < len(tokens) && depth > 0 {
@@ -76,14 +72,10 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 				panic("[ERROR] Mismatched parentheses")
 			}
 
-			// Recursively parse the parenthetical group
 			sub := p.parseExpression(tokens[i+1 : j-1])
 			emptyNode := &ast.EmptyExprNode{Child: sub}
 
-			// Add placeholder token to newTokens
 			newTokens = append(newTokens, *token.NewToken(token.EMPTY, ""))
-
-			// Track the corresponding node
 			subNodes = append(subNodes, emptyNode)
 
 			i = j
@@ -93,11 +85,6 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 		}
 	}
 
-	//This will cause bugs in the future, for handling nested array literals
-	contains, _ := includesItem(tokens, *token.NewToken(token.ASSIGN, "="))
-	if contains {
-		return p.parseSubExpression(tokens, subNodes)
-	}
 	if tokens[0].TokType == token.LBRACK {
 		depth := 1
 		var toks []token.Token
@@ -109,11 +96,21 @@ func (p *Parser) parseExpression(tokens []token.Token) ast.Node {
 			} else if tokens[i].TokType == token.RBRACK {
 				depth--
 				if depth == 0 {
-					return p.parseArr(toks)
+					if i == len(tokens)-1 {
+						return p.parseArr(toks)
+					}
+					break
 				}
 			}
 		}
-		panic(fmt.Sprintf("[ERROR] Could not find right brace corresponding to left brace, got %v\n", tokens))
+		if depth != 0 {
+			panic(fmt.Sprintf("[ERROR] Could not find right brace corresponding to left brace, got %v\n", tokens))
+		}
+	}
+
+	contains, _ := includesItem(tokens, *token.NewToken(token.ASSIGN, "="))
+	if contains {
+		return p.parseSubExpression(tokens, subNodes)
 	}
 
 	return p.parseSubExpression(newTokens, subNodes)
@@ -123,6 +120,13 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 	if len(tokens) == 0 {
 		panic("[ERROR] Empty expression")
 	}
+
+	if len(tokens) >= 4 && tokens[0].TokType == token.VAR_REF && tokens[1].TokType == token.LBRACK {
+		if includes, _ := includesItem(tokens, *token.NewToken(token.ASSIGN, "=")); includes {
+			return p.parseArrRef(tokens)
+		}
+	}
+
 	if len(tokens) == 1 {
 		tok := tokens[0]
 		switch tok.TokType {
@@ -145,7 +149,6 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 				if tokens[1].TokType == token.LPAREN {
 					return p.parseFuncCallStmt(tokens)
 				}
-
 			}
 			return &ast.ReferenceExprNode{Name: tok.Literal}
 		case token.EMPTY:
@@ -153,12 +156,28 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 				panic("[ERROR] EMPTY token without corresponding subnode")
 			}
 			return subNodes[0]
-
 		default:
 			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
 		}
 	}
-	if tokens[0].TokType == token.VAR_REF && tokens[1].TokType == token.LBRACK {
+	hasOperator, _ := includesAny(tokens, []token.TokenType{
+		token.PLUS,
+		token.MINUS,
+		token.MULTIPLY,
+		token.DIVIDE,
+		token.MODULO,
+		token.EXPONENT,
+		token.LESS_THAN,
+		token.LESS_THAN_EQT,
+		token.GREATER_THAN,
+		token.GREATER_THAN_EQT,
+		token.EQUALS,
+		token.NOT_EQUAL,
+		token.AND,
+		token.OR,
+		token.NOT,
+	})
+	if tokens[0].TokType == token.VAR_REF && tokens[1].TokType == token.LBRACK && !hasOperator {
 		arr := p.parseArrRef(tokens)
 		return arr
 	}
@@ -239,7 +258,6 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 }
 
 func (p *Parser) parseLetStmt(toks []token.Token) *ast.LetStmtNode {
-	// Do Sematic checks
 	if toks[0].TokType != token.LET {
 		panic(fmt.Sprintf("[ERROR] Let statement is required to initialize variable, got %v\n", toks[0]))
 	}
@@ -267,7 +285,6 @@ func (p *Parser) parseVarReference(tok token.Token) *ast.ReferenceExprNode {
 }
 
 func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
-	// Sematic checks
 	if toks[0].TokType != token.VAR_REF {
 		panic(fmt.Sprintf("[ERROR] Expected var name, got %v\n", toks[0]))
 	}
@@ -281,13 +298,12 @@ func (p *Parser) parseVarReassign(toks []token.Token) *ast.VarReassignNode {
 		NewVal: value,
 	}
 }
+
 func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
-	// Do sematic analysis
 	if toks[0].TokType != token.IF {
 		panic(fmt.Sprintf("[ERROR] Expected \"IF\" got %v\n", toks[0]))
 	}
 
-	// Calculate condition
 	var condToks []token.Token
 	condLen := 0
 	for i, val := range toks[1:] {
@@ -307,12 +323,13 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 			parsedStmts = append(parsedStmts, n)
 		}
 	}
+	var toReturn *ast.IfStmtNode
 	if cond.NodeType() == ast.BoolLiteral {
 		boolCond, ok := cond.(*ast.BoolLiteralNode)
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %+v\n", cond))
 		}
-		return &ast.IfStmtNode{
+		toReturn = &ast.IfStmtNode{
 			Cond: boolCond,
 			Body: parsedStmts,
 		}
@@ -322,7 +339,7 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
 		}
-		return &ast.IfStmtNode{
+		toReturn = &ast.IfStmtNode{
 			Cond: boolCond,
 			Body: parsedStmts,
 		}
@@ -332,7 +349,7 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
 		}
-		return &ast.IfStmtNode{
+		toReturn = &ast.IfStmtNode{
 			Cond: &ast.BoolInfixNode{
 				Left:     refExpr,
 				Operator: token.OR,
@@ -346,20 +363,22 @@ func (p *Parser) parseIfStmt(toks []token.Token) *ast.IfStmtNode {
 		if !ok {
 			panic(fmt.Sprintf("[ERROR] Could not figure out conditional, got %v\n", cond))
 		}
-		return &ast.IfStmtNode{
+		toReturn = &ast.IfStmtNode{
 			Cond: prefixExpr,
 			Body: parsedStmts,
 		}
 	}
-
-	panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
+	if toReturn == nil {
+		panic(fmt.Sprintf("[ERROR] Could not parse if statement, tokens are %+v, cond types are %v\n", toks, cond.NodeType()))
+	}
+	p.ifStack = append(p.ifStack, toReturn)
+	return toReturn
 }
 
 func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode {
 	if toks[0].TokType != token.WHILE {
 		panic(fmt.Sprintf("[ERROR] Expected \"WHILE\" got %v\n", toks[0]))
 	}
-	// Calculate condition
 	var condToks []token.Token
 	condLen := 0
 	for i, val := range toks[1:] {
@@ -425,40 +444,33 @@ func (p *Parser) parseWhileStmt(toks []token.Token) *ast.WhileStmtNode {
 	}
 	panic(fmt.Sprintf("[ERROR] Could not parse while statement, tokens are %+v\n, cond types are %v\n", toks, cond.NodeType()))
 }
+
 func (p *Parser) parseElseStmt(toks []token.Token) {
-	// Semantic checks
 	if toks[0].TokType != token.ELSE {
 		panic(fmt.Sprintf("[ERROR] Expected else, got %v\n", toks[0]))
 	}
 
-	// Extract the body between braces (skip ELSE and LBRACE, exclude RBRACE)
 	bodyTokens := toks[2:]
-
 	body := p.splitIntoLines(bodyTokens)
 
 	var stmts []ast.Node
 	for _, val := range body {
-		if len(val) > 0 { // Only parse non-empty token slices
+		if len(val) > 0 {
 			stmt := p.parseStmt(val)
 			if stmt != nil {
 				stmts = append(stmts, stmt)
 			}
-		} else {
 		}
 	}
 
-	// Find the last if statement to attach this else to
-	if len(p.program.Statements) == 0 || p.program.Statements[len(p.program.Statements)-1].NodeType() != ast.IfStmt {
+	if len(p.ifStack) == 0 {
 		panic("[ERROR] Could not find if to attach else to")
 	}
 
-	lastIf, ok := p.program.Statements[len(p.program.Statements)-1].(*ast.IfStmtNode)
-	if !ok {
-		panic("[ERROR] Could not find if to attach else to")
-	}
-
+	lastIfIndex := len(p.ifStack) - 1
+	lastIf := p.ifStack[lastIfIndex]
 	lastIf.Alt = stmts
-	p.program.Statements[len(p.program.Statements)-1] = lastIf
+	p.ifStack = p.ifStack[:lastIfIndex]
 }
 
 func (p *Parser) parseStmt(line []token.Token) ast.Node {
@@ -468,13 +480,11 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 
 	firstTok := line[0]
 
-	// Avoid indexing line[1] if the line length is 1
 	var secondTok token.Token
 	if len(line) > 1 {
 		secondTok = line[1]
 	}
 
-	// Skip lone braces or semicolons that ended up as their own "line"
 	if len(line) == 1 {
 		if firstTok.TokType == token.RBRACE || firstTok.TokType == token.LBRACE || firstTok.TokType == token.SEMICOLON {
 			return nil
@@ -485,7 +495,6 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 		if firstTok.TokType == token.BREAK {
 			return &ast.BreakStmtNode{}
 		}
-		// For single-token lines, let parseExpression handle literals and var refs.
 		return p.parseExpression(line)
 	}
 
@@ -517,7 +526,6 @@ func (p *Parser) parseStmt(line []token.Token) ast.Node {
 	if firstTok.TokType == token.BREAK {
 		return &ast.BreakStmtNode{}
 	}
-	// If it is not a let statement or a reassign statement assume it is an expression
 	return p.parseExpression(line)
 }
 
@@ -530,5 +538,4 @@ func (p *Parser) Parse(tokens []token.Token) ast.ProgramNode {
 		}
 	}
 	return p.program
-
 }

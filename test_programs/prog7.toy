@@ -1,0 +1,11 @@
+let arr = [];
+let n = 0;
+while n < 3{
+    arr[n] = n * 2;
+    n++;
+}
+if arr[0] == 0{
+    println("pass");
+} else {
+    println("fail");
+}

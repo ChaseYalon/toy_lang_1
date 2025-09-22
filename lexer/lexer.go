@@ -12,6 +12,7 @@ type Lexer struct {
 	pos        int
 	tokens     []token.Token
 	inString   bool
+	isInComment bool
 }
 
 func NewLexer() *Lexer {
@@ -22,6 +23,7 @@ func NewLexer() *Lexer {
 		pos:        0,
 		tokens:     []token.Token{},
 		inString:   false,
+		isInComment: false,
 	}
 }
 
@@ -102,6 +104,14 @@ func (l *Lexer) Lex(s string) []token.Token {
 	l.currString = []rune{}
 
 	for l.pos < len(l.chars) {
+		if l.isInComment{
+			if l.chars[l.pos] == '*' && l.peek(1) == '/'{
+				l.isInComment = false;
+			}
+			l.eat();
+			l.eat();
+			continue;
+		}
 		ch := l.getChar()
 		if l.inString && ch != '"' {
 			l.currString = append(l.currString, ch)
@@ -153,6 +163,11 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.tokens = append(l.tokens, *token.NewToken(token.SEMICOLON, ";"))
 			l.eat()
 			continue
+		case ch == '/' && l.peek(1) == '*':
+			l.isInComment = true;
+			l.eat();
+			l.eat();
+			continue;
 		case ch == ',':
 			l.flushNum()
 			l.flushStr()
