@@ -335,11 +335,11 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 		}
 
 		idxVal := i.execExpr(reassignNode.Idx, local_scope)
-		key := idxVal.String() 
+		key := idxVal.String()
 
-		arrLit.Elems[key] = i.execExpr(reassignNode.NewVal, local_scope);
-		return i.execExpr(reassignNode.NewVal, local_scope);
-}
+		arrLit.Elems[key] = i.execExpr(reassignNode.NewVal, local_scope)
+		return i.execExpr(reassignNode.NewVal, local_scope)
+	}
 
 	if node.NodeType() == ast.ArrRef {
 		refNode := node.(*ast.ArrRefNode)
@@ -357,7 +357,6 @@ func (i *Interpreter) execExpr(node ast.Node, local_scope *Scope) ast.Node {
 
 		return arrLit.Elems[key]
 	}
-
 
 	panic(fmt.Sprintf("[ERROR] Could not figure out what to evaluate, got %v of type %v\n", node, node.NodeType()))
 }

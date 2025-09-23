@@ -134,12 +134,12 @@ func NewInterpreter() Interpreter {
 		},
 	}
 	builtinScope.Funcs["len"] = ast.FuncDecNode{
-		Name: "len",
+		Name:   "len",
 		Params: []ast.ReferenceExprNode{{Name: "input"}},
 		Body: []ast.Node{
 			&ast.ReturnExprNode{
 				Val: &ast.CallBuiltinNode{
-					Name: "len",
+					Name:   "len",
 					Params: []ast.Node{&ast.ReferenceExprNode{Name: "input"}},
 				},
 			},
@@ -290,7 +290,7 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 			output = strconv.FormatFloat(v.Value, 'f', -1, 64)
 		case *ast.ArrLiteralNode:
 		default:
-			output = val.String();
+			output = val.String()
 		}
 		if inode.Name == "print" {
 			fmt.Print(output)
@@ -387,37 +387,37 @@ func (i *Interpreter) callBuiltin(node ast.Node, local_scope *Scope) ast.Node {
 		}
 		return &ast.FloatLiteralNode{Value: minVal + rand.Float64()*(maxVal-minVal)}
 	case "len":
-		obj := inode.Params[1];
-		if obj.NodeType() == ast.ArrLiteral{
-			arrLitObj := obj.(*ast.ArrLiteralNode);
-			return &ast.IntLiteralNode{Value: len(arrLitObj.Elems)};
+		obj := inode.Params[1]
+		if obj.NodeType() == ast.ArrLiteral {
+			arrLitObj := obj.(*ast.ArrLiteralNode)
+			return &ast.IntLiteralNode{Value: len(arrLitObj.Elems)}
 		}
-		if obj.NodeType() == ast.ArrRef{
-			arrRefObj := obj.(*ast.ArrRefNode);
-			arrObj, found := local_scope.getVar(arrRefObj.Arr.Name);
-			if !found{
-				panic(fmt.Sprintf("[ERROR] Variable %v is undefined\n", arrRefObj.Arr.Name));
+		if obj.NodeType() == ast.ArrRef {
+			arrRefObj := obj.(*ast.ArrRefNode)
+			arrObj, found := local_scope.getVar(arrRefObj.Arr.Name)
+			if !found {
+				panic(fmt.Sprintf("[ERROR] Variable %v is undefined\n", arrRefObj.Arr.Name))
 			}
-			arrLitObj, ok := arrObj.(*ast.ArrLiteralNode);
-			if !ok{
-				panic(fmt.Sprintf("[ERROR] Variable %v s not an array, it is a %v\n", arrRefObj.Arr.Name, arrObj.NodeType()));
+			arrLitObj, ok := arrObj.(*ast.ArrLiteralNode)
+			if !ok {
+				panic(fmt.Sprintf("[ERROR] Variable %v s not an array, it is a %v\n", arrRefObj.Arr.Name, arrObj.NodeType()))
 			}
-			return &ast.IntLiteralNode{Value: len(arrLitObj.Elems)};
+			return &ast.IntLiteralNode{Value: len(arrLitObj.Elems)}
 		}
-		if obj.NodeType() == ast.StringLiteral{
-			strLitObj := obj.(*ast.StringLiteralNode);
-			return &ast.IntLiteralNode{Value: len(strLitObj.Value)};
+		if obj.NodeType() == ast.StringLiteral {
+			strLitObj := obj.(*ast.StringLiteralNode)
+			return &ast.IntLiteralNode{Value: len(strLitObj.Value)}
 		}
-		if obj.NodeType() == ast.ReferenceExpr{
-			refObj := obj.(*ast.ReferenceExprNode);
-			varLit, found := local_scope.getVar(refObj.Name);
-			if !found{
-				panic(fmt.Sprintf("[ERROR] Var %v is undefined", refObj.Name));
+		if obj.NodeType() == ast.ReferenceExpr {
+			refObj := obj.(*ast.ReferenceExprNode)
+			varLit, found := local_scope.getVar(refObj.Name)
+			if !found {
+				panic(fmt.Sprintf("[ERROR] Var %v is undefined", refObj.Name))
 			}
-			return i.callBuiltin(varLit, local_scope);
+			return i.callBuiltin(varLit, local_scope)
 		}
 		//Assume it is an infix expression
-		return i.callBuiltin(i.execExpr(node, local_scope), local_scope);
+		return i.callBuiltin(i.execExpr(node, local_scope), local_scope)
 	}
 	panic(fmt.Sprintf("[ERROR] Unknown builtin function %v", inode.Name))
 }

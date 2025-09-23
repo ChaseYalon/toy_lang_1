@@ -18,7 +18,7 @@ func NewParser() *Parser {
 		program: ast.ProgramNode{
 			Statements: []ast.Node{},
 		},
-		tokens: []token.Token{},
+		tokens:  []token.Token{},
 		ifStack: []*ast.IfStmtNode{},
 	}
 }

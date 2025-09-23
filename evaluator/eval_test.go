@@ -459,7 +459,7 @@ func TestEvaluator(t *testing.T) {
 			},
 			id: 42,
 		},
-		
+
 		{
 			input: `
 let arr = [];
@@ -477,15 +477,15 @@ if arr[0] == 0{
 			output: map[string]ast.Node{
 				"arr": &ast.ArrLiteralNode{
 					Elems: map[string]ast.Node{
-						(&ast.IntLiteralNode{Value: 0}).String() : &ast.IntLiteralNode{Value: 0},
-						(&ast.IntLiteralNode{Value: 1}).String() : &ast.IntLiteralNode{Value: 2},
-						(&ast.IntLiteralNode{Value: 2}).String() : &ast.IntLiteralNode{Value: 4},
+						(&ast.IntLiteralNode{Value: 0}).String(): &ast.IntLiteralNode{Value: 0},
+						(&ast.IntLiteralNode{Value: 1}).String(): &ast.IntLiteralNode{Value: 2},
+						(&ast.IntLiteralNode{Value: 2}).String(): &ast.IntLiteralNode{Value: 4},
 					},
 				},
 				"n": &ast.IntLiteralNode{Value: 3},
 			},
 			want_str: "pass\n",
-			id: 43,
+			id:       43,
 		},
 	}
 

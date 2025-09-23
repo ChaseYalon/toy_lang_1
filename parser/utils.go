@@ -19,7 +19,7 @@ func (p *Parser) generatePrecedenceTable() map[token.TokenType]int {
 		token.FLOAT:            100,
 		token.AND:              4,
 		token.OR:               4,
-		token.NOT:              5, // Logical operators have lower precedence than arithmetic, not is lowest
+		token.NOT:              50, // Logical operators have lower precedence than arithmetic, not is lowest
 		token.LESS_THAN:        4,
 		token.LESS_THAN_EQT:    4,
 		token.GREATER_THAN:     4,
@@ -78,10 +78,19 @@ func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) 
 			depth--
 		default:
 			if depth == 0 {
-				if val, ok := pt[tok.TokType]; ok && val < lowestVal {
-					lowestVal = val
-					lowestTok = tok
-					lowestIndex = i
+				if tok.TokType != token.NOT{
+
+					if val, ok := pt[tok.TokType]; ok && (val <= lowestVal ) {
+						lowestVal = val
+						lowestTok = tok
+						lowestIndex = i
+					}
+				}else {
+					if val, ok := pt[tok.TokType]; ok && (val < lowestVal ) {
+						lowestVal = val
+						lowestTok = tok
+						lowestIndex = i
+					}
 				}
 			}
 		}
@@ -100,13 +109,13 @@ func includesItem(arr []token.Token, tok token.Token) (bool, int) {
 	return false, -1
 }
 
-func includesAny(arr []token.Token, checkFor []token.TokenType)(bool, int){
-	for i, val := range arr{
-		for _, val2 := range checkFor{
-			if val2 == val.TokType{
-				return true, i;
+func includesAny(arr []token.Token, checkFor []token.TokenType) (bool, int) {
+	for i, val := range arr {
+		for _, val2 := range checkFor {
+			if val2 == val.TokType {
+				return true, i
 			}
 		}
 	}
-	return false, -1;
+	return false, -1
 }

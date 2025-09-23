@@ -53,7 +53,7 @@ func (i *Interpreter) assignValue(name string, value ast.Node, local_scope *Scop
 			for key, val := range arrNode.Elems {
 				elems[key] = i.execExpr(val, local_scope)
 			}
-			valNode = &ast.ArrLiteralNode{Elems: elems}		
+			valNode = &ast.ArrLiteralNode{Elems: elems}
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown reference type: %T\n", refVal))
 		}

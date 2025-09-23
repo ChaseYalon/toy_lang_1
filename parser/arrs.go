@@ -39,7 +39,7 @@ func (p *Parser) parseArr(toks []token.Token) ast.Node {
 
 	arrElems := make(map[string]ast.Node)
 	for i, val := range valNodes {
-		temp := ast.IntLiteralNode{Value: i};
+		temp := ast.IntLiteralNode{Value: i}
 		arrElems[temp.String()] = val
 	}
 

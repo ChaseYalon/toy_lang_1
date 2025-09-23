@@ -1473,31 +1473,31 @@ func TestParser(t *testing.T) {
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "num",
+						Name:  "num",
 						Value: &ast.IntLiteralNode{Value: 5},
 					},
 					&ast.IfStmtNode{
 						Cond: &ast.BoolInfixNode{
-							Left: &ast.ReferenceExprNode{Name: "num"},
+							Left:     &ast.ReferenceExprNode{Name: "num"},
 							Operator: token.GREATER_THAN,
-							Right: &ast.IntLiteralNode{Value: 0},
+							Right:    &ast.IntLiteralNode{Value: 0},
 						},
 						Body: []ast.Node{
 							&ast.IfStmtNode{
 								Cond: &ast.BoolInfixNode{
-									Left: &ast.ReferenceExprNode{Name: "num"},
+									Left:     &ast.ReferenceExprNode{Name: "num"},
 									Operator: token.LESS_THAN,
-									Right: &ast.IntLiteralNode{Value: 10},
+									Right:    &ast.IntLiteralNode{Value: 10},
 								},
 								Body: []ast.Node{
 									&ast.FuncCallNode{
-										Name: ast.ReferenceExprNode{Name: "println"},
+										Name:   ast.ReferenceExprNode{Name: "println"},
 										Params: []ast.Node{&ast.StringLiteralNode{Value: "single digit positive"}},
 									},
 								},
 								Alt: []ast.Node{
 									&ast.FuncCallNode{
-										Name: ast.ReferenceExprNode{Name: "println"},
+										Name:   ast.ReferenceExprNode{Name: "println"},
 										Params: []ast.Node{&ast.StringLiteralNode{Value: "large positive"}},
 									},
 								},
@@ -1505,11 +1505,10 @@ func TestParser(t *testing.T) {
 						},
 						Alt: []ast.Node{
 							&ast.FuncCallNode{
-								Name: ast.ReferenceExprNode{Name: "println"},
+								Name:   ast.ReferenceExprNode{Name: "println"},
 								Params: []ast.Node{&ast.StringLiteralNode{Value: "non-positive"}},
 							},
 						},
-
 					},
 				},
 			},
@@ -1532,36 +1531,36 @@ if arr[0] == 0{
 			output: ast.ProgramNode{
 				Statements: []ast.Node{
 					&ast.LetStmtNode{
-						Name: "arr",
-						Value: &ast.ArrLiteralNode{ Elems: map[string]ast.Node{}, },
+						Name:  "arr",
+						Value: &ast.ArrLiteralNode{Elems: map[string]ast.Node{}},
 					},
-					
+
 					&ast.LetStmtNode{
-						Name: "n",
+						Name:  "n",
 						Value: &ast.IntLiteralNode{Value: 0},
 					},
 					&ast.WhileStmtNode{
 						Cond: &ast.BoolInfixNode{
-							Left: &ast.ReferenceExprNode{Name: "n"},
+							Left:     &ast.ReferenceExprNode{Name: "n"},
 							Operator: token.LESS_THAN,
-							Right: &ast.IntLiteralNode{Value: 3},
+							Right:    &ast.IntLiteralNode{Value: 3},
 						},
 						Body: []ast.Node{
 							&ast.ArrReassignNode{
 								Arr: ast.ReferenceExprNode{Name: "arr"},
 								Idx: &ast.ReferenceExprNode{Name: "n"},
 								NewVal: &ast.InfixExprNode{
-									Left: &ast.ReferenceExprNode{Name: "n"},
+									Left:     &ast.ReferenceExprNode{Name: "n"},
 									Operator: token.MULTIPLY,
-									Right: &ast.IntLiteralNode{Value: 2},
+									Right:    &ast.IntLiteralNode{Value: 2},
 								},
 							},
 							&ast.VarReassignNode{
 								Var: ast.ReferenceExprNode{Name: "n"},
 								NewVal: &ast.InfixExprNode{
-									Left: &ast.ReferenceExprNode{Name: "n"},
+									Left:     &ast.ReferenceExprNode{Name: "n"},
 									Operator: token.PLUS,
-									Right: &ast.IntLiteralNode{Value: 1},
+									Right:    &ast.IntLiteralNode{Value: 1},
 								},
 							},
 						},
@@ -1573,17 +1572,17 @@ if arr[0] == 0{
 								Idx: &ast.IntLiteralNode{Value: 0},
 							},
 							Operator: token.EQUALS,
-							Right: &ast.IntLiteralNode{Value: 0},
+							Right:    &ast.IntLiteralNode{Value: 0},
 						},
 						Body: []ast.Node{
 							&ast.FuncCallNode{
-								Name: ast.ReferenceExprNode{Name: "println"},
+								Name:   ast.ReferenceExprNode{Name: "println"},
 								Params: []ast.Node{&ast.StringLiteralNode{Value: "pass"}},
 							},
 						},
 						Alt: []ast.Node{
 							&ast.FuncCallNode{
-								Name: ast.ReferenceExprNode{Name: "println"},
+								Name:   ast.ReferenceExprNode{Name: "println"},
 								Params: []ast.Node{&ast.StringLiteralNode{Value: "fail"}},
 							},
 						},
@@ -1591,6 +1590,49 @@ if arr[0] == 0{
 				},
 			},
 			id: 41,
+		},
+		{
+			input: "4 + 2 - 2",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.InfixExprNode{
+						Left: &ast.InfixExprNode{
+							Left:     &ast.IntLiteralNode{Value: 4},
+							Operator: token.PLUS,
+							Right:    &ast.IntLiteralNode{Value: 2},
+						},
+						Operator: token.MINUS,
+						Right:    &ast.IntLiteralNode{Value: 2},
+					},
+				},
+			},
+			id: 42,
+		},
+		{
+			input: "let x = true; let y = !!x && true;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name:  "x",
+						Value: &ast.BoolLiteralNode{Value: true},
+					},
+					&ast.LetStmtNode{
+						Name: "y",
+						Value: &ast.BoolInfixNode{
+							Left: &ast.PrefixExprNode{
+								Operator: token.NOT,
+								Value: &ast.PrefixExprNode{
+									Operator: token.NOT,
+									Value:    &ast.ReferenceExprNode{Name: "x"},
+								},
+							},
+							Operator: token.AND,
+							Right:    &ast.BoolLiteralNode{Value: true},
+						},
+					},
+				},
+			},
+			id: 43,
 		},
 	}
 

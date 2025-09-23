@@ -6,23 +6,23 @@ import (
 )
 
 type Lexer struct {
-	currNum    []rune
-	currString []rune
-	chars      []rune
-	pos        int
-	tokens     []token.Token
-	inString   bool
+	currNum     []rune
+	currString  []rune
+	chars       []rune
+	pos         int
+	tokens      []token.Token
+	inString    bool
 	isInComment bool
 }
 
 func NewLexer() *Lexer {
 	return &Lexer{
-		chars:      []rune{},
-		currNum:    []rune{},
-		currString: []rune{},
-		pos:        0,
-		tokens:     []token.Token{},
-		inString:   false,
+		chars:       []rune{},
+		currNum:     []rune{},
+		currString:  []rune{},
+		pos:         0,
+		tokens:      []token.Token{},
+		inString:    false,
 		isInComment: false,
 	}
 }
@@ -104,13 +104,13 @@ func (l *Lexer) Lex(s string) []token.Token {
 	l.currString = []rune{}
 
 	for l.pos < len(l.chars) {
-		if l.isInComment{
-			if l.chars[l.pos] == '*' && l.peek(1) == '/'{
-				l.isInComment = false;
+		if l.isInComment {
+			if l.chars[l.pos] == '*' && l.peek(1) == '/' {
+				l.isInComment = false
 			}
-			l.eat();
-			l.eat();
-			continue;
+			l.eat()
+			l.eat()
+			continue
 		}
 		ch := l.getChar()
 		if l.inString && ch != '"' {
@@ -164,10 +164,10 @@ func (l *Lexer) Lex(s string) []token.Token {
 			l.eat()
 			continue
 		case ch == '/' && l.peek(1) == '*':
-			l.isInComment = true;
-			l.eat();
-			l.eat();
-			continue;
+			l.isInComment = true
+			l.eat()
+			l.eat()
+			continue
 		case ch == ',':
 			l.flushNum()
 			l.flushStr()
