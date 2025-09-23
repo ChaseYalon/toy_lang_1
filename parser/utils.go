@@ -78,15 +78,15 @@ func (p *Parser) findLowestBp(pt map[token.TokenType]int, tokens []token.Token) 
 			depth--
 		default:
 			if depth == 0 {
-				if tok.TokType != token.NOT{
+				if tok.TokType != token.NOT {
 
-					if val, ok := pt[tok.TokType]; ok && (val <= lowestVal ) {
+					if val, ok := pt[tok.TokType]; ok && (val <= lowestVal) {
 						lowestVal = val
 						lowestTok = tok
 						lowestIndex = i
 					}
-				}else {
-					if val, ok := pt[tok.TokType]; ok && (val < lowestVal ) {
+				} else {
+					if val, ok := pt[tok.TokType]; ok && (val < lowestVal) {
 						lowestVal = val
 						lowestTok = tok
 						lowestIndex = i

@@ -12,6 +12,8 @@ const (
 	DECLARE_VAR
 	REF_VAR
 	LOAD_BOOL
+	JMP
+	JMP_IF_FALSE
 )
 
 func (l OpLabel) String() string {
@@ -26,6 +28,10 @@ func (l OpLabel) String() string {
 		return "REF_VAR"
 	case LOAD_BOOL:
 		return "LOAD_BOOL"
+	case JMP:
+		return "JMP"
+	case JMP_IF_FALSE:
+		return "JMP_IF_FALSE"
 	default:
 		return "UNDEFINED"
 	}
@@ -48,17 +54,17 @@ func (l *LOAD_INT_INS) String() string {
 	return fmt.Sprintf("LOAD_INT ADDR(%d), VAL(%d)", l.Address, l.Value)
 }
 
-type INFIX_INT_INS struct {
+type INFIX_INS struct {
 	Left_addr    int
 	Right_addr   int
 	Save_to_addr int
-	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide
+	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide 5 for less then 6 for less then eqt 7 for greater then 8 for greater then eqt 9 for equals, 10 for not equals, 11 for and, 12 for or
 }
 
-func (a *INFIX_INT_INS) OpType() OpLabel {
+func (a *INFIX_INS) OpType() OpLabel {
 	return INFIX_INT
 }
-func (a *INFIX_INT_INS) String() string {
+func (a *INFIX_INS) String() string {
 	return fmt.Sprintf("INFIX_INT LEFT_ADDR(%d), RIGHT_ADDR(%d), SAVE_TO_ADDR(%d), OPERATOR(%d)", a.Left_addr, a.Right_addr, a.Save_to_addr, a.Operation)
 }
 
@@ -86,14 +92,39 @@ func (d *REF_VAR_INS) String() string {
 	return fmt.Sprintf("REF_VAR  NAME(%v) SAVE_TO(%d)   ", d.Name, d.SaveTo)
 }
 
-
 type LOAD_BOOL_INS struct {
 	Address int
-	Value bool
+	Value   bool
 }
-func (l *LOAD_BOOL_INS) OpType() OpLabel{
-	return LOAD_BOOL;
+
+func (l *LOAD_BOOL_INS) OpType() OpLabel {
+	return LOAD_BOOL
 }
-func (l *LOAD_BOOL_INS)String() string{
-	return fmt.Sprintf("LOAD_BOOL ADDR(%v) VALUE(%v)", l.Address, l.Value);
+func (l *LOAD_BOOL_INS) String() string {
+	return fmt.Sprintf("LOAD_BOOL ADDR(%v) VALUE(%v)", l.Address, l.Value)
+}
+
+
+
+type JMP_INS struct{
+	InstNum int // Address, not change 
+}
+func (j *JMP_INS)OpType() OpLabel{
+	return JMP
+}
+func (j *JMP_INS)String() string{
+	return fmt.Sprintf("JUMP_TO ADDR(%d)", j.InstNum);
+}
+
+
+
+type JMP_IF_FALSE_INS struct{
+	CondAddr int //Address with the bool
+	TargetAddr int
+}
+func (j *JMP_IF_FALSE_INS)OpType() OpLabel{
+	return JMP_IF_FALSE
+}
+func (j *JMP_IF_FALSE_INS)String() string{
+	return fmt.Sprintf("JUMP_TO_IF CondADDR(%d) JmpToAddr(%d)", j.CondAddr, j.TargetAddr)
 }
