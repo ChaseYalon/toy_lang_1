@@ -11,6 +11,7 @@ const (
 	INFIX_INT
 	DECLARE_VAR
 	REF_VAR
+	LOAD_BOOL
 )
 
 func (l OpLabel) String() string {
@@ -23,6 +24,8 @@ func (l OpLabel) String() string {
 		return "DECLARE_VAR"
 	case REF_VAR:
 		return "REF_VAR"
+	case LOAD_BOOL:
+		return "LOAD_BOOL"
 	default:
 		return "UNDEFINED"
 	}
@@ -42,7 +45,7 @@ func (l *LOAD_INT_INS) OpType() OpLabel {
 	return LOAD_INT
 }
 func (l *LOAD_INT_INS) String() string {
-	return fmt.Sprintf("LOAD_INT %d   %d", l.Address, l.Value)
+	return fmt.Sprintf("LOAD_INT ADDR(%d), VAL(%d)", l.Address, l.Value)
 }
 
 type INFIX_INT_INS struct {
@@ -56,7 +59,7 @@ func (a *INFIX_INT_INS) OpType() OpLabel {
 	return INFIX_INT
 }
 func (a *INFIX_INT_INS) String() string {
-	return fmt.Sprintf("INFIX_INT %d   %d   %d   %d", a.Left_addr, a.Right_addr, a.Save_to_addr, a.Operation)
+	return fmt.Sprintf("INFIX_INT LEFT_ADDR(%d), RIGHT_ADDR(%d), SAVE_TO_ADDR(%d), OPERATOR(%d)", a.Left_addr, a.Right_addr, a.Save_to_addr, a.Operation)
 }
 
 type DECLARE_VAR_INS struct {
@@ -68,7 +71,7 @@ func (d *DECLARE_VAR_INS) OpType() OpLabel {
 	return DECLARE_VAR
 }
 func (d *DECLARE_VAR_INS) String() string {
-	return fmt.Sprintf("DECLARE_VAR   %v   %v   ", d.Name, d.Addr)
+	return fmt.Sprintf("DECLARE_VAR NAME(%v), VAL_ADDR(%v)", d.Name, d.Addr)
 }
 
 type REF_VAR_INS struct {
@@ -80,5 +83,17 @@ func (d *REF_VAR_INS) OpType() OpLabel {
 	return REF_VAR
 }
 func (d *REF_VAR_INS) String() string {
-	return fmt.Sprintf("REF_VAR   %v   %d   ", d.Name, d.SaveTo)
+	return fmt.Sprintf("REF_VAR  NAME(%v) SAVE_TO(%d)   ", d.Name, d.SaveTo)
+}
+
+
+type LOAD_BOOL_INS struct {
+	Address int
+	Value bool
+}
+func (l *LOAD_BOOL_INS) OpType() OpLabel{
+	return LOAD_BOOL;
+}
+func (l *LOAD_BOOL_INS)String() string{
+	return fmt.Sprintf("LOAD_BOOL ADDR(%v) VALUE(%v)", l.Address, l.Value);
 }

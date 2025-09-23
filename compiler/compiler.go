@@ -73,6 +73,16 @@ func (c *Compiler) compileExpr(node ast.Node) int {
 		c.emit(&toRet)
 		return c.currBestAdr - 1
 	}
+	if node.NodeType() == ast.BoolLiteral{
+		boolNode := node.(*ast.BoolLiteralNode);
+		toRet := bytecode.LOAD_BOOL_INS{
+			Address: c.currBestAdr,
+			Value: boolNode.Value,
+		}
+		c.currBestAdr++;
+		c.emit(&toRet);
+		return c.currBestAdr - 1;
+	}
 	panic(fmt.Sprintf("[ERROR] Got unknown type of %v\n", node.NodeType()))
 }
 

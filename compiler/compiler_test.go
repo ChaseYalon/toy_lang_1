@@ -3,6 +3,7 @@ package compiler
 import (
 	"reflect"
 	"testing"
+	"fmt"
 	"toy_lang/bytecode"
 	"toy_lang/lexer"
 	"toy_lang/parser"
@@ -15,13 +16,23 @@ type tType struct {
 }
 
 func compareInputs(t *testing.T, wantI tType, got []bytecode.Instruction) {
+	var Reset = "\033[0m"
+	var Red = "\033[31m"
+	var Green = "\033[32m"
 	want := wantI.output
 
+	stderr := "";
 	for i, val := range want {
 		if !reflect.DeepEqual(val, got[i]) {
-			t.Errorf("[ERROR] Test number %v has failed, \nwanted %v, \ngot %v\n", wantI.id, val, got[i])
+			stderr += fmt.Sprintf("%v[ERROR] Test number %v has failed, \nwanted %v, \ngot %v%v\n", Red ,wantI.id, val, got[i], Reset);
 		}
 	}
+	if stderr != ""{
+		t.Error(stderr);
+	} else {
+		fmt.Printf("%v[PASS] Test number %d has passed%v\n", Green, wantI.id, Reset);
+	}
+
 }
 
 func TestCompiler(t *testing.T) {
@@ -102,6 +113,14 @@ func TestCompiler(t *testing.T) {
 				&bytecode.INFIX_INT_INS{Left_addr: 1, Right_addr: 2, Save_to_addr: 3, Operation: 3},
 			},
 			id: 8,
+		},
+		{
+			input: "let x = true;",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_BOOL_INS{Address: 0, Value: true},
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 0},
+			},
+			id: 9,
 		},
 	}
 	for _, tt := range tests {

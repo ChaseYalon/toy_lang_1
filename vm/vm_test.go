@@ -16,7 +16,7 @@ type ramSlot struct {
 type vmTest struct {
 	input  string
 	output []ramSlot
-	vars   map[string]int
+	vars   map[string]any
 	id     int
 }
 
@@ -115,25 +115,32 @@ func TestVM(t *testing.T) {
 		},
 		{
 			input: "let x = 4;",
-			vars: map[string]int{
+			vars: map[string]any{
 				"x": 4,
 			},
 			id: 5,
 		},
 		{
 			input: "let x = 5; x = 4;",
-			vars: map[string]int{
+			vars: map[string]any{
 				"x": 4,
 			},
 			id: 6,
 		},
 		{
 			input: "let x = 4; let y = x * 3;",
-			vars: map[string]int{
+			vars: map[string]any{
 				"x": 4,
 				"y": 12,
 			},
 			id: 7,
+		},
+		{
+			input: "let x = true;",
+			vars: map[string]any{
+				"x": true,
+			},
+			id: 8,
 		},
 	}
 	for _, tt := range tests {

@@ -61,6 +61,9 @@ func (v *Vm) executeIns(ins bytecode.Instruction) {
 	case bytecode.REF_VAR:
 		op := ins.(*bytecode.REF_VAR_INS)
 		v.Ram[op.SaveTo] = v.Ram[v.Vars[op.Name]]
+	case bytecode.LOAD_BOOL:
+		op := ins.(*bytecode.LOAD_BOOL_INS);
+		v.Ram[op.Address] = op.Value;
 	}
 }
 
