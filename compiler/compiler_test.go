@@ -24,7 +24,7 @@ func compareInputs(t *testing.T, wantI tType, got []bytecode.Instruction) {
 	stderr := ""
 	for i, val := range want {
 		if !reflect.DeepEqual(val, got[i]) {
-			stderr += fmt.Sprintf("%v[ERROR] Test number %v has failed, \nwanted %v, \ngot %v%v\n", Red, wantI.id, val, got[i], Reset)
+			stderr += fmt.Sprintf("%v[ERROR] Test number %v has failed,%v \nwanted %v, \ngot %v%v\n", Red, wantI.id, Reset, val, got[i], Reset)
 		}
 	}
 	if stderr != "" {
@@ -152,6 +152,33 @@ func TestCompiler(t *testing.T) {
 				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 2},
 			},
 			id: 12,
+		},
+		{
+			input: "let x = 4 * (3 + 2);",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_INT_INS{Address: 0, Value: 4},
+				&bytecode.LOAD_INT_INS{Address: 1, Value: 3},
+				&bytecode.LOAD_INT_INS{Address: 2, Value: 2},
+				&bytecode.INFIX_INS{Left_addr: 1, Right_addr: 2, Save_to_addr: 3, Operation: 1},
+				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 3, Save_to_addr: 4, Operation: 3},
+			},
+			id: 13,
+		},
+		{
+			input: "fn add(a, b){return a + b;} let c = add(2, 3);",
+			output: []bytecode.Instruction{
+				&bytecode.FUNC_DEC_START_INS{Name: "add", ParamCount: 2},
+				&bytecode.REF_VAR_INS{Name: "a", SaveTo: 0},
+				&bytecode.REF_VAR_INS{Name: "b", SaveTo: 1},
+				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 1},
+				&bytecode.RETURN_INS{Ptr: 2},
+				&bytecode.FUNC_DEC_END_INS{},
+				&bytecode.LOAD_INT_INS{Address: 0, Value: 2},
+				&bytecode.LOAD_INT_INS{Address: 1, Value: 3},
+				&bytecode.FUNC_CALL_INS{Params: []int{0, 1}, Name: "add", PutRet: 2},
+				&bytecode.DECLARE_VAR_INS{Name: "c", Addr: 2},
+			},
+			id: 14,
 		},
 	}
 	for _, tt := range tests {

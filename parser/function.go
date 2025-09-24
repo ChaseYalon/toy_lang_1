@@ -62,6 +62,7 @@ func (p *Parser) parseFuncDecStmt(toks []token.Token) *ast.FuncDecNode {
 	return &ast.FuncDecNode{
 		Name:   toks[1].Literal,
 		Params: astParams,
+		ParamCount: len(astParams),
 		Body:   body,
 	}
 }

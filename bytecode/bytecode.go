@@ -14,6 +14,10 @@ const (
 	LOAD_BOOL
 	JMP
 	JMP_IF_FALSE
+	FUNC_DEC_START
+	FUNC_DEC_END
+	FUNC_CALL
+	RETURN
 )
 
 func (l OpLabel) String() string {
@@ -32,6 +36,14 @@ func (l OpLabel) String() string {
 		return "JMP"
 	case JMP_IF_FALSE:
 		return "JMP_IF_FALSE"
+	case FUNC_DEC_START:
+		return "FUNC_DEC_START"
+	case FUNC_DEC_END:
+		return "FUNC_DEC_END"
+	case FUNC_CALL:
+		return "FUNC_CALL"
+	case RETURN:
+		return "RETURN"
 	default:
 		return "UNDEFINED"
 	}
@@ -127,4 +139,52 @@ func (j *JMP_IF_FALSE_INS)OpType() OpLabel{
 }
 func (j *JMP_IF_FALSE_INS)String() string{
 	return fmt.Sprintf("JUMP_TO_IF CondADDR(%d) JmpToAddr(%d)", j.CondAddr, j.TargetAddr)
+}
+
+
+
+type FUNC_DEC_START_INS struct{
+	Name string
+	ParamCount int
+}
+func (f *FUNC_DEC_START_INS)OpType() OpLabel{
+	return FUNC_DEC_START
+}
+func (f *FUNC_DEC_START_INS)String() string{
+	return fmt.Sprintf("FUNC_DEC_START NAME(%v) PARAMS(%d)", f.Name, f.ParamCount);
+}
+
+
+
+type FUNC_DEC_END_INS struct{} //For all intents and purposes return, if the user does not explicitly
+func (f *FUNC_DEC_END_INS) OpType()OpLabel{
+	return FUNC_DEC_END
+}
+func (f *FUNC_DEC_END_INS)String()string{
+	return "FUNC_DEC_END"
+}
+
+
+
+type FUNC_CALL_INS struct{
+	Params []int //Pointers to where the parameters are held, in order so for fn add(a, b) it would need to point to a first and b second
+	Name string
+	PutRet int
+}
+func (f *FUNC_CALL_INS) OpType() OpLabel{
+	return FUNC_CALL
+}
+func (f *FUNC_CALL_INS)String() string{
+	return fmt.Sprintf("FUNC_CALL PARAMS(%+d) NAME(%v) SAVE_VAL(%d)", f.Params, f.Name, f.PutRet);
+}
+
+
+type RETURN_INS struct{
+	Ptr int
+}
+func (r *RETURN_INS) OpType() OpLabel{
+	return RETURN;
+}
+func (r *RETURN_INS) String() string{
+	return fmt.Sprintf("RETURN %d", r.Ptr);
 }

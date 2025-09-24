@@ -5,19 +5,67 @@ import (
 	"toy_lang/bytecode"
 )
 
+type Scope struct{
+	Vars map[string]int
+	Parent *Scope
+	isMain bool
+}
+
+func (s *Scope)newChild()*Scope{
+	return &Scope{
+		Vars: make(map[string]int),
+		Parent: s,
+		isMain: false,
+	}
+}
+
+func (s *Scope)getVar(input string)int{
+	lVar, found := s.Vars[input];
+	if !found && s.isMain{
+		panic(fmt.Sprintf("[ERROR] Variable \"%v\" is undefined\n", input));
+	}
+	if !found{
+		return s.Parent.getVar(input);
+	}
+
+	
+	return lVar;
+}
+
+func (s *Scope)setVar(name string, address int){
+	s.Vars[name] = address;
+}
+
+func NewMainScope() *Scope{
+	return &Scope{
+		Vars: make(map[string]int),
+		Parent: nil,
+		isMain: true,
+	}
+}
+
+
+type CallFrame struct{
+	Local_scope *Scope
+	ArgAddrs []int
+	RetAddr int
+	PutVal int //Where the return value (if any) should be placed in memory
+}
+
+
 type Vm struct {
 	Ins  []bytecode.Instruction
 	insPtr int
 	Ram  [1 << 11]any
-	Vars map[string]int
+	MainScope *Scope
 }
 
 func NewVm() *Vm {
 	return &Vm{
 		Ins:  []bytecode.Instruction{},
 		Ram:  [1 << 11]any{},
-		Vars: make(map[string]int),
 		insPtr: 0,
+		MainScope: NewMainScope(),
 	}
 }
 
@@ -52,7 +100,7 @@ func (v *Vm) convertToBool(input any) bool {
 	}
 }
 
-func (v *Vm) executeIns(ins bytecode.Instruction) {
+func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 	switch ins.OpType() {
 	case bytecode.LOAD_INT:
 		op := ins.(*bytecode.LOAD_INT_INS)
@@ -100,10 +148,10 @@ func (v *Vm) executeIns(ins bytecode.Instruction) {
 		}
 	case bytecode.DECLARE_VAR:
 		op := ins.(*bytecode.DECLARE_VAR_INS)
-		v.Vars[op.Name] = op.Addr
+		local_scope.setVar(op.Name,  op.Addr);
 	case bytecode.REF_VAR:
 		op := ins.(*bytecode.REF_VAR_INS)
-		v.Ram[op.SaveTo] = v.Ram[v.Vars[op.Name]]
+		v.Ram[op.SaveTo] = v.Ram[local_scope.getVar(op.Name)];
 	case bytecode.LOAD_BOOL:
 		op := ins.(*bytecode.LOAD_BOOL_INS)
 		v.Ram[op.Address] = op.Value
@@ -123,7 +171,7 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 	v.Ins = instructions;
 
 	for v.insPtr < len(v.Ins){
-		v.executeIns(v.Ins[v.insPtr]);
+		v.executeIns(v.Ins[v.insPtr], v.MainScope);
 		v.insPtr++;
 	}
 	if shouldPrint {
@@ -136,7 +184,7 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 		fmt.Print("\n")
 	}
 	toReturnVars := make(map[string]any)
-	for key, val := range v.Vars {
+	for key, val := range v.MainScope.Vars {
 		toReturnVars[key] = v.Ram[val]
 	}
 	return &v.Ram, toReturnVars

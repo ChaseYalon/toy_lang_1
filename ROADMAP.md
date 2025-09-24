@@ -56,5 +56,5 @@ Roadmap:
 Notes:
 I have decided not to do elsif, can do it later but if()elsif()else() can just be if()else(if());
 I have also decided not to do for because I am a lazy fuck
-
+The compiler is currently function, not block scoped because I cant figure out how to fix it, will do later
 Make it so that x % y == z results in (x % y) == z not x % (y == z) that makes no sense

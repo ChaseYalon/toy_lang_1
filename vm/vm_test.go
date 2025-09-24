@@ -165,6 +165,20 @@ func TestVM(t *testing.T) {
 			},
 			id: 11,
 		},
+		{
+			input: "let x = 4 * (3 + 2);",
+			vars: map[string]any{
+				"x": 20,
+			},
+			id: 12,
+		},
+		{
+			input: "fn add(a, b){return a + b;} let c = add(2, 3);",
+			vars: map[string]any{
+				"c": 5,
+			},
+			id: 13,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

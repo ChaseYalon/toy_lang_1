@@ -22,23 +22,30 @@ func NewCompiler() *Compiler {
 func (c *Compiler) emit(ins bytecode.Instruction) {
 	c.ins = append(c.ins, ins)
 }
-func (c *Compiler) compileExpr(node ast.Node) int {
+
+func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
+	if node.NodeType() == ast.EmptyExpr {
+		op := node.(*ast.EmptyExprNode)
+		return c.compileExpr(op.Child, mem)
+	}
+
 	if node.NodeType() == ast.IntLiteral {
 		intNode := node.(*ast.IntLiteralNode)
 
 		toRet := bytecode.LOAD_INT_INS{
-			Address: c.currBestAdr,
+			Address: *mem,
 			Value:   intNode.Value,
 		}
-		c.currBestAdr++
+		*mem = *mem + 1;
 		c.emit(&toRet)
 		return c.currBestAdr - 1
 	}
+
 	if node.NodeType() == ast.InfixExpr {
 		infixNode := node.(*ast.InfixExprNode)
 
-		leftAddr := c.compileExpr(infixNode.Left)
-		rightAddr := c.compileExpr(infixNode.Right)
+		leftAddr := c.compileExpr(infixNode.Left, mem)
+		rightAddr := c.compileExpr(infixNode.Right, mem)
 
 		opInstr := -1
 		switch infixNode.Operator {
@@ -56,38 +63,41 @@ func (c *Compiler) compileExpr(node ast.Node) int {
 		toRet := bytecode.INFIX_INS{
 			Left_addr:    leftAddr,
 			Right_addr:   rightAddr,
-			Save_to_addr: c.currBestAdr,
+			Save_to_addr: *mem,
 			Operation:    opInstr,
 		}
-		c.currBestAdr++
+		*mem = *mem + 1;
 		c.emit(&toRet)
-		return c.currBestAdr - 1
+		return *mem - 1
 	}
+
 	if node.NodeType() == ast.ReferenceExpr {
 		refExpr := node.(*ast.ReferenceExprNode)
 		toRet := bytecode.REF_VAR_INS{
 			Name:   refExpr.Name,
-			SaveTo: c.currBestAdr,
+			SaveTo: *mem,
 		}
-		c.currBestAdr++
+		*mem = *mem + 1;
 		c.emit(&toRet)
-		return c.currBestAdr - 1
+		return *mem - 1
 	}
+
 	if node.NodeType() == ast.BoolLiteral {
 		boolNode := node.(*ast.BoolLiteralNode)
 		toRet := bytecode.LOAD_BOOL_INS{
-			Address: c.currBestAdr,
+			Address: *mem,
 			Value:   boolNode.Value,
 		}
-		c.currBestAdr++
+		*mem = *mem + 1
 		c.emit(&toRet)
-		return c.currBestAdr - 1
+		return *mem - 1
 	}
+
 	if node.NodeType() == ast.BoolInfix {
 		infixNode := node.(*ast.BoolInfixNode)
 
-		leftAddr := c.compileExpr(infixNode.Left)
-		rightAddr := c.compileExpr(infixNode.Right)
+		leftAddr := c.compileExpr(infixNode.Left, mem)
+		rightAddr := c.compileExpr(infixNode.Right, mem)
 
 		opInstr := -1
 		switch infixNode.Operator {
@@ -113,26 +123,50 @@ func (c *Compiler) compileExpr(node ast.Node) int {
 		toRet := bytecode.INFIX_INS{
 			Left_addr:    leftAddr,
 			Right_addr:   rightAddr,
-			Save_to_addr: c.currBestAdr,
+			Save_to_addr: *mem,
 			Operation:    opInstr,
 		}
-		c.currBestAdr++
+		*mem = *mem + 1
 		c.emit(&toRet)
-		return c.currBestAdr - 1
+		return *mem - 1
 	}
+
+	if node.NodeType() == ast.ReturnExpr {
+		retNode := node.(*ast.ReturnExprNode)
+		addr := c.compileExpr(retNode.Val, mem)
+		c.emit(&bytecode.RETURN_INS{Ptr: addr})
+		return *mem - 1;
+	}
+
+	if node.NodeType() == ast.FuncCall {
+		fCallNode := node.(*ast.FuncCallNode)
+
+		var addrs []int = []int{}
+		for _, val := range fCallNode.Params {
+			addrs = append(addrs, c.compileExpr(val, mem))
+		}
+		c.emit(&bytecode.FUNC_CALL_INS{Name: fCallNode.Name.Name, Params: addrs, PutRet: *mem})
+		*mem = *mem + 1
+		return *mem - 1;
+	}
+
 	panic(fmt.Sprintf("[ERROR] Got unknown type of %v\n", node.NodeType()))
 }
 
-func (c *Compiler) compileStmt(node ast.Node) {
-	if node.NodeType() == ast.InfixExpr || node.NodeType() == ast.IntLiteral || node.NodeType() == ast.BoolLiteral || node.NodeType() == ast.BoolInfix {
-		c.compileExpr(node)
+func (c *Compiler) compileStmt(node ast.Node, mem *int) {
+	if node.NodeType() == ast.InfixExpr ||
+		node.NodeType() == ast.IntLiteral ||
+		node.NodeType() == ast.BoolLiteral ||
+		node.NodeType() == ast.BoolInfix ||
+		node.NodeType() == ast.EmptyExpr ||
+		node.NodeType() == ast.ReturnExpr {
+		c.compileExpr(node, mem)
 		return
-
 	}
 
 	if node.NodeType() == ast.LetStmt {
 		letStmt := node.(*ast.LetStmtNode)
-		valAddr := c.compileExpr(letStmt.Value)
+		valAddr := c.compileExpr(letStmt.Value, mem)
 		toEmit := bytecode.DECLARE_VAR_INS{
 			Name: letStmt.Name,
 			Addr: valAddr,
@@ -140,9 +174,10 @@ func (c *Compiler) compileStmt(node ast.Node) {
 		c.emit(&toEmit)
 		return
 	}
+
 	if node.NodeType() == ast.VarReassign {
 		letStmt := node.(*ast.VarReassignNode)
-		valAddr := c.compileExpr(letStmt.NewVal)
+		valAddr := c.compileExpr(letStmt.NewVal, mem)
 		toEmit := bytecode.DECLARE_VAR_INS{
 			Name: letStmt.Var.Name,
 			Addr: valAddr,
@@ -150,17 +185,18 @@ func (c *Compiler) compileStmt(node ast.Node) {
 		c.emit(&toEmit)
 		return
 	}
+
 	if node.NodeType() == ast.IfStmt {
 		ifNode := node.(*ast.IfStmtNode)
 
-		condAddr := c.compileExpr(ifNode.Cond)
+		condAddr := c.compileExpr(ifNode.Cond, mem)
 		jmpFalse := &bytecode.JMP_IF_FALSE_INS{
 			CondAddr:   condAddr,
 			TargetAddr: -1, // placeholder
 		}
 		c.emit(jmpFalse)
 		for _, stmt := range ifNode.Body {
-			c.compileStmt(stmt)
+			c.compileStmt(stmt, mem)
 		}
 
 		if len(ifNode.Alt) > 0 {
@@ -172,7 +208,7 @@ func (c *Compiler) compileStmt(node ast.Node) {
 			jmpFalse.TargetAddr = len(c.ins)
 
 			for _, stmt := range ifNode.Alt {
-				c.compileStmt(stmt)
+				c.compileStmt(stmt, mem)
 			}
 
 			jmp.InstNum = len(c.ins)
@@ -182,12 +218,31 @@ func (c *Compiler) compileStmt(node ast.Node) {
 		return
 	}
 
+	if node.NodeType() == ast.FuncDec {
+		fDecNode := node.(*ast.FuncDecNode)
+
+		c.emit(&bytecode.FUNC_DEC_START_INS{Name: fDecNode.Name, ParamCount: fDecNode.ParamCount})
+
+		//Local frame memory counter
+
+		localBestMem := c.currBestAdr;
+		for _, val := range fDecNode.Body {
+			c.compileStmt(val, &localBestMem)
+		}
+		// Emit function end (correct instruction)
+		c.emit(&bytecode.FUNC_DEC_END_INS{})
+		return
+	}
+
 	panic(fmt.Sprintf("[ERROR] Could not compile ast node of val %v, type %v\n", node, node.NodeType()))
 }
 
 func (c *Compiler) Compile(input ast.ProgramNode) []bytecode.Instruction {
 	for _, val := range input.Statements {
-		c.compileStmt(val)
+		c.compileStmt(val, &c.currBestAdr)
+	}
+	for _, val := range c.ins{
+		fmt.Printf("%v\n", val);
 	}
 	return c.ins
 }
