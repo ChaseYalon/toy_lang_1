@@ -281,11 +281,11 @@ func (n *ReturnExprNode) String() string {
 }
 
 type FuncDecNode struct {
-	Name   string
-	Params []ReferenceExprNode
+	Name       string
+	Params     []ReferenceExprNode
 	ParamCount int
-	Body   []Node
-	Return ReturnExprNode
+	Body       []Node
+	Return     ReturnExprNode
 }
 
 func (n *FuncDecNode) NodeType() AstNode {

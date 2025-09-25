@@ -36,7 +36,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 			Address: *mem,
 			Value:   intNode.Value,
 		}
-		*mem = *mem + 1;
+		*mem = *mem + 1
 		c.emit(&toRet)
 		return c.currBestAdr - 1
 	}
@@ -66,7 +66,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 			Save_to_addr: *mem,
 			Operation:    opInstr,
 		}
-		*mem = *mem + 1;
+		*mem = *mem + 1
 		c.emit(&toRet)
 		return *mem - 1
 	}
@@ -77,7 +77,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 			Name:   refExpr.Name,
 			SaveTo: *mem,
 		}
-		*mem = *mem + 1;
+		*mem = *mem + 1
 		c.emit(&toRet)
 		return *mem - 1
 	}
@@ -135,7 +135,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 		retNode := node.(*ast.ReturnExprNode)
 		addr := c.compileExpr(retNode.Val, mem)
 		c.emit(&bytecode.RETURN_INS{Ptr: addr})
-		return *mem - 1;
+		return *mem - 1
 	}
 
 	if node.NodeType() == ast.FuncCall {
@@ -147,7 +147,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 		}
 		c.emit(&bytecode.FUNC_CALL_INS{Name: fCallNode.Name.Name, Params: addrs, PutRet: *mem})
 		*mem = *mem + 1
-		return *mem - 1;
+		return *mem - 1
 	}
 
 	panic(fmt.Sprintf("[ERROR] Got unknown type of %v\n", node.NodeType()))
@@ -220,12 +220,15 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 
 	if node.NodeType() == ast.FuncDec {
 		fDecNode := node.(*ast.FuncDecNode)
-
-		c.emit(&bytecode.FUNC_DEC_START_INS{Name: fDecNode.Name, ParamCount: fDecNode.ParamCount})
+		var paramNames []string
+		for _, val := range fDecNode.Params {
+			paramNames = append(paramNames, val.Name)
+		}
+		c.emit(&bytecode.FUNC_DEC_START_INS{Name: fDecNode.Name, ParamCount: fDecNode.ParamCount, ParamNames: paramNames})
 
 		//Local frame memory counter
 
-		localBestMem := c.currBestAdr;
+		localBestMem := c.currBestAdr
 		for _, val := range fDecNode.Body {
 			c.compileStmt(val, &localBestMem)
 		}
@@ -241,8 +244,8 @@ func (c *Compiler) Compile(input ast.ProgramNode) []bytecode.Instruction {
 	for _, val := range input.Statements {
 		c.compileStmt(val, &c.currBestAdr)
 	}
-	for _, val := range c.ins{
-		fmt.Printf("%v\n", val);
+	for _, val := range c.ins {
+		fmt.Printf("%v\n", val)
 	}
 	return c.ins
 }

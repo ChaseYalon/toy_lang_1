@@ -116,75 +116,70 @@ func (l *LOAD_BOOL_INS) String() string {
 	return fmt.Sprintf("LOAD_BOOL ADDR(%v) VALUE(%v)", l.Address, l.Value)
 }
 
-
-
-type JMP_INS struct{
-	InstNum int // Address, not change 
+type JMP_INS struct {
+	InstNum int // Address, not change
 }
-func (j *JMP_INS)OpType() OpLabel{
+
+func (j *JMP_INS) OpType() OpLabel {
 	return JMP
 }
-func (j *JMP_INS)String() string{
-	return fmt.Sprintf("JUMP_TO ADDR(%d)", j.InstNum);
+func (j *JMP_INS) String() string {
+	return fmt.Sprintf("JUMP_TO ADDR(%d)", j.InstNum)
 }
 
-
-
-type JMP_IF_FALSE_INS struct{
-	CondAddr int //Address with the bool
+type JMP_IF_FALSE_INS struct {
+	CondAddr   int //Address with the bool
 	TargetAddr int
 }
-func (j *JMP_IF_FALSE_INS)OpType() OpLabel{
+
+func (j *JMP_IF_FALSE_INS) OpType() OpLabel {
 	return JMP_IF_FALSE
 }
-func (j *JMP_IF_FALSE_INS)String() string{
+func (j *JMP_IF_FALSE_INS) String() string {
 	return fmt.Sprintf("JUMP_TO_IF CondADDR(%d) JmpToAddr(%d)", j.CondAddr, j.TargetAddr)
 }
 
-
-
-type FUNC_DEC_START_INS struct{
-	Name string
+type FUNC_DEC_START_INS struct {
+	Name       string
 	ParamCount int
+	ParamNames []string
 }
-func (f *FUNC_DEC_START_INS)OpType() OpLabel{
+
+func (f *FUNC_DEC_START_INS) OpType() OpLabel {
 	return FUNC_DEC_START
 }
-func (f *FUNC_DEC_START_INS)String() string{
-	return fmt.Sprintf("FUNC_DEC_START NAME(%v) PARAMS(%d)", f.Name, f.ParamCount);
+func (f *FUNC_DEC_START_INS) String() string {
+	return fmt.Sprintf("FUNC_DEC_START NAME(%v) PARAMS(%d)", f.Name, f.ParamCount)
 }
-
-
 
 type FUNC_DEC_END_INS struct{} //For all intents and purposes return, if the user does not explicitly
-func (f *FUNC_DEC_END_INS) OpType()OpLabel{
+func (f *FUNC_DEC_END_INS) OpType() OpLabel {
 	return FUNC_DEC_END
 }
-func (f *FUNC_DEC_END_INS)String()string{
+func (f *FUNC_DEC_END_INS) String() string {
 	return "FUNC_DEC_END"
 }
 
-
-
-type FUNC_CALL_INS struct{
+type FUNC_CALL_INS struct {
 	Params []int //Pointers to where the parameters are held, in order so for fn add(a, b) it would need to point to a first and b second
-	Name string
+	Name   string
 	PutRet int
 }
-func (f *FUNC_CALL_INS) OpType() OpLabel{
+
+func (f *FUNC_CALL_INS) OpType() OpLabel {
 	return FUNC_CALL
 }
-func (f *FUNC_CALL_INS)String() string{
-	return fmt.Sprintf("FUNC_CALL PARAMS(%+d) NAME(%v) SAVE_VAL(%d)", f.Params, f.Name, f.PutRet);
+func (f *FUNC_CALL_INS) String() string {
+	return fmt.Sprintf("FUNC_CALL PARAMS(%+d) NAME(%v) SAVE_VAL(%d)", f.Params, f.Name, f.PutRet)
 }
 
-
-type RETURN_INS struct{
+type RETURN_INS struct {
 	Ptr int
 }
-func (r *RETURN_INS) OpType() OpLabel{
-	return RETURN;
+
+func (r *RETURN_INS) OpType() OpLabel {
+	return RETURN
 }
-func (r *RETURN_INS) String() string{
-	return fmt.Sprintf("RETURN %d", r.Ptr);
+func (r *RETURN_INS) String() string {
+	return fmt.Sprintf("RETURN %d", r.Ptr)
 }

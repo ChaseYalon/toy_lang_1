@@ -144,7 +144,7 @@ func TestCompiler(t *testing.T) {
 			input: "if true{let x = 2;} else {let x = 4;}",
 			output: []bytecode.Instruction{
 				&bytecode.LOAD_BOOL_INS{Address: 0, Value: true},
-				&bytecode.JMP_IF_FALSE_INS{CondAddr: 0, TargetAddr: 5 },
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 0, TargetAddr: 5},
 				&bytecode.LOAD_INT_INS{Address: 1, Value: 2},
 				&bytecode.DECLARE_VAR_INS{Addr: 1, Name: "x"},
 				&bytecode.JMP_INS{InstNum: 7},
@@ -167,7 +167,7 @@ func TestCompiler(t *testing.T) {
 		{
 			input: "fn add(a, b){return a + b;} let c = add(2, 3);",
 			output: []bytecode.Instruction{
-				&bytecode.FUNC_DEC_START_INS{Name: "add", ParamCount: 2},
+				&bytecode.FUNC_DEC_START_INS{Name: "add", ParamCount: 2, ParamNames: []string{"a", "b"}},
 				&bytecode.REF_VAR_INS{Name: "a", SaveTo: 0},
 				&bytecode.REF_VAR_INS{Name: "b", SaveTo: 1},
 				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 1},
