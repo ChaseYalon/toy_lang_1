@@ -10,12 +10,22 @@ import (
 type Compiler struct {
 	ins         []bytecode.Instruction
 	currBestAdr int
+	//Hash set to check if a function name is predefined
+	builtinFuncs map[string]string
 }
 
 func NewCompiler() *Compiler {
 	return &Compiler{
 		ins:         []bytecode.Instruction{},
 		currBestAdr: 0,
+		builtinFuncs: map[string]string{
+			"println": "println",
+			"print":   "print",
+			"input":   "input",
+			"str":     "str",
+			"int":     "int",
+			"bool":    "bool",
+		},
 	}
 }
 
@@ -38,17 +48,17 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 		}
 		*mem = *mem + 1
 		c.emit(&toRet)
-		return *mem - 1;
+		return *mem - 1
 	}
-	if node.NodeType() == ast.StringLiteral{
-		op := node.(*ast.StringLiteralNode);
+	if node.NodeType() == ast.StringLiteral {
+		op := node.(*ast.StringLiteralNode)
 		toRet := bytecode.LOAD_STRING_INS{
 			Address: *mem,
-			Value: op.Value,
+			Value:   op.Value,
 		}
-		*mem = *mem + 1;
-		c.emit(&toRet);
-		return *mem - 1;
+		*mem = *mem + 1
+		c.emit(&toRet)
+		return *mem - 1
 	}
 
 	if node.NodeType() == ast.InfixExpr {
@@ -153,6 +163,17 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 
 	if node.NodeType() == ast.FuncCall {
 		fCallNode := node.(*ast.FuncCallNode)
+
+		name := fCallNode.Name.Name
+		if _, exists := c.builtinFuncs[name]; exists {
+			var addrs []int = []int{}
+			for _, val := range fCallNode.Params {
+				addrs = append(addrs, c.compileExpr(val, mem))
+			}
+			c.emit(&bytecode.CALL_BUILTIN_INS{Name: fCallNode.Name.Name, Params: addrs, PutRet: *mem})
+			*mem = *mem + 1
+			return *mem - 1
+		}
 
 		var addrs []int = []int{}
 		for _, val := range fCallNode.Params {

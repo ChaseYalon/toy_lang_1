@@ -14,7 +14,7 @@ const (
 
 	//EXPRS
 	INFIX_INT
-	
+
 	//JMP
 	JMP
 	JMP_IF_FALSE
@@ -28,6 +28,7 @@ const (
 	FUNC_DEC_END
 	FUNC_CALL
 	RETURN
+	CALL_BUILTIN
 )
 
 func (l OpLabel) String() string {
@@ -196,15 +197,27 @@ func (r *RETURN_INS) String() string {
 	return fmt.Sprintf("RETURN %d", r.Ptr)
 }
 
-
-
-type LOAD_STRING_INS struct{
+type LOAD_STRING_INS struct {
 	Address int
-	Value string
+	Value   string
 }
-func (l *LOAD_STRING_INS) OpType() OpLabel{
+
+func (l *LOAD_STRING_INS) OpType() OpLabel {
 	return LOAD_STRING
 }
-func (l *LOAD_STRING_INS) String() string{
-	return fmt.Sprintf("LOAD_STRING ADDR(%d) VALUE(%v)", l.Address, l.Value);
+func (l *LOAD_STRING_INS) String() string {
+	return fmt.Sprintf("LOAD_STRING ADDR(%d) VALUE(%v)", l.Address, l.Value)
+}
+
+type CALL_BUILTIN_INS struct {
+	Params []int
+	Name   string
+	PutRet int
+}
+
+func (c *CALL_BUILTIN_INS) OpType() OpLabel {
+	return CALL_BUILTIN
+}
+func (c *CALL_BUILTIN_INS) String() string {
+	return fmt.Sprintf("CALL_BUILTIN PARAMS(%+d) NAME(%v) SAVE_VAL(%d)", c.Params, c.Name, c.PutRet)
 }

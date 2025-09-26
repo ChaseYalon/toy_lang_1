@@ -1641,9 +1641,9 @@ if arr[0] == 0{
 					&ast.LetStmtNode{
 						Name: "x",
 						Value: &ast.InfixExprNode{
-							Left: &ast.IntLiteralNode{Value: 5},
+							Left:     &ast.IntLiteralNode{Value: 5},
 							Operator: token.MODULO,
-							Right: &ast.IntLiteralNode{Value: 2},
+							Right:    &ast.IntLiteralNode{Value: 2},
 						},
 					},
 				},

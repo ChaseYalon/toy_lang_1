@@ -198,6 +198,14 @@ func TestCompiler(t *testing.T) {
 			},
 			id: 16,
 		},
+		{
+			input: `println("hello world")`,
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_STRING_INS{Address: 0, Value: "hello world"},
+				&bytecode.CALL_BUILTIN_INS{Name: "println", Params: []int{0}, PutRet: 1},
+			},
+			id: 17,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()
