@@ -4,6 +4,7 @@
         "empt",
         "println",
         "randf",
+        "serr",
         "Stmts"
     ]
 }

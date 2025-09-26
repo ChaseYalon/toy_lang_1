@@ -194,6 +194,13 @@ func TestVM(t *testing.T) {
 			},
 			id: 15,
 		},
+		{
+			input: `let a = "hello " + "world";`,
+			vars: map[string]any{
+				"a": "hello world",
+			},
+			id: 16,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strconv"
 	"toy_lang/bytecode"
 )
 
@@ -40,34 +41,62 @@ func NewVm() *Vm {
 	}
 }
 
-func (v *Vm) convertToInt(input any) int {
+func (v *Vm) convertToInt(input any) (int, error) {
 	switch t := input.(type) {
 	case int:
-		return t
+		return t, nil
 	case bool:
 		bIn := input.(bool)
 		if bIn {
-			return 1
+			return 1, nil
 		} else {
-			return 0
+			return 0, nil
 		}
+	case string:
+		s := input.(string);
+		i, err := strconv.Atoi(s);
+		if err != nil{
+			return -1, err
+		}
+		return i, nil;
 	default:
-		panic(fmt.Sprintf("[ERROR] Could not convert %v of type %v to an int", input, t))
+		return -1, fmt.Errorf("[ERROR] Could not convert %v of type %v to an int", input, t)
 	}
 
 }
-func (v *Vm) convertToBool(input any) bool {
+func (v *Vm) convertToBool(input any) (bool, error) {
 	switch t := input.(type) {
 	case int:
 		i := input.(int)
 		if i > 0 {
-			return true
+			return true, nil
 		}
-		return false
+		return false, nil
 	case bool:
-		return input.(bool)
+		return input.(bool), nil
+	case string:
+		s := input.(string);
+		if s == ""{
+			return false, nil;
+		}
+		return true, nil;
 	default:
-		panic(fmt.Sprintf("[ERROR] Could not convert type %v into a bool\n", t))
+		return false, fmt.Errorf("[ERROR] Could not convert type %v into a bool\n", t)
+	}
+}
+func (v *Vm) convertToString(input any)(string, error){
+	switch t := input.(type){
+	case int:
+		return strconv.Itoa(t), nil;
+	case bool:
+		b := input.(bool)
+		res := strconv.FormatBool(b);
+		return res, nil;
+	case string:
+		s := input.(string);
+		return s, nil
+	default:
+		return "", fmt.Errorf("[ERROR] Could not convert type of %v into a string\n", t);
 	}
 }
 
@@ -82,8 +111,22 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 	case bytecode.INFIX_INT:
 		op := ins.(*bytecode.INFIX_INS)
 		
-		leftVal := v.convertToInt(v.Ram[op.Left_addr])
-		rightVal := v.convertToInt(v.Ram[op.Right_addr])
+		leftVal, err1 := v.convertToInt(v.Ram[op.Left_addr])
+		rightVal, err2 := v.convertToInt(v.Ram[op.Right_addr])
+
+		if err1 != nil || err2 != nil{
+			if op.Operation == 1{
+				leftStr, serr1 := v.convertToString(v.Ram[op.Left_addr]);
+				rightStr, serr2 := v.convertToString(v.Ram[op.Right_addr]);
+				if serr1 != nil || serr2 != nil{
+					panic(fmt.Sprintf("[ERROR] %v, %v", err1, err2));
+				}
+				fmt.Printf("Left str: %v, Right str: %v\n", leftStr, rightStr);
+				v.Ram[op.Save_to_addr] = leftStr + rightStr;
+				fmt.Printf("Ram addr: {%v : %d}\n", v.Ram[op.Save_to_addr], op.Save_to_addr);
+				return;
+			}
+		}
 		switch op.Operation {
 		case 1:
 			v.Ram[op.Save_to_addr] = leftVal + rightVal
@@ -112,18 +155,19 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 		case 13:
 			v.Ram[op.Save_to_addr] = leftVal % rightVal;
 		case 11:
-			bLeft := v.convertToBool(v.Ram[op.Left_addr])
-			bRight := v.convertToBool(v.Ram[op.Right_addr])
+			bLeft, _ := v.convertToBool(v.Ram[op.Left_addr])
+			bRight, _ := v.convertToBool(v.Ram[op.Right_addr])
 			v.Ram[op.Save_to_addr] = bLeft && bRight
 		case 12:
-			bLeft := v.convertToBool(v.Ram[op.Left_addr])
-			bRight := v.convertToBool(v.Ram[op.Right_addr])
+			bLeft, _ := v.convertToBool(v.Ram[op.Left_addr])
+			bRight, _ := v.convertToBool(v.Ram[op.Right_addr])
 			v.Ram[op.Save_to_addr] = bLeft || bRight
 		default:
 			panic(fmt.Sprintf("[ERROR] Unknown operator, got %v\n", op.Operation))
 		}
 	case bytecode.DECLARE_VAR:
 		op := ins.(*bytecode.DECLARE_VAR_INS)
+		fmt.Printf("%v\n", op);
 		local_scope.setVar(op.Name, op.Addr)
 	case bytecode.REF_VAR:
 		op := ins.(*bytecode.REF_VAR_INS)
@@ -140,7 +184,7 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 		v.insPtr = op.InstNum
 	case bytecode.JMP_IF_FALSE:
 		op := ins.(*bytecode.JMP_IF_FALSE_INS)
-		cond := v.convertToBool(v.Ram[op.CondAddr])
+		cond, _ := v.convertToBool(v.Ram[op.CondAddr])
 		if !cond {
 			v.insPtr = op.TargetAddr
 		}
@@ -229,6 +273,7 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 	}
 	toReturnVars := make(map[string]any)
 	for key, val := range v.MainScope.Vars {
+		fmt.Printf("Key: %v, Val: %v\n", key, v.Ram[val]);
 		toReturnVars[key] = v.Ram[val]
 	}
 	return &v.Ram, toReturnVars
