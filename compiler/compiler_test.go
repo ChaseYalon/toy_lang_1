@@ -190,6 +190,14 @@ func TestCompiler(t *testing.T) {
 			},
 			id: 15,
 		},
+		{
+			input: `let s = "hello world";`,
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_STRING_INS{Address: 0, Value: "hello world"},
+				&bytecode.DECLARE_VAR_INS{Name: "s", Addr: 0},
+			},
+			id: 16,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

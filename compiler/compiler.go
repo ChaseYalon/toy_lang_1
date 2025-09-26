@@ -38,7 +38,17 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 		}
 		*mem = *mem + 1
 		c.emit(&toRet)
-		return c.currBestAdr - 1
+		return *mem - 1;
+	}
+	if node.NodeType() == ast.StringLiteral{
+		op := node.(*ast.StringLiteralNode);
+		toRet := bytecode.LOAD_STRING_INS{
+			Address: *mem,
+			Value: op.Value,
+		}
+		*mem = *mem + 1;
+		c.emit(&toRet);
+		return *mem - 1;
 	}
 
 	if node.NodeType() == ast.InfixExpr {

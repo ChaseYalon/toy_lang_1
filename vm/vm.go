@@ -76,7 +76,10 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 	case bytecode.LOAD_INT:
 		op := ins.(*bytecode.LOAD_INT_INS)
 		v.Ram[op.Address] = op.Value
-		case bytecode.INFIX_INT:
+	case bytecode.LOAD_STRING:
+		op := ins.(*bytecode.LOAD_STRING_INS);
+		v.Ram[op.Address] = op.Value;
+	case bytecode.INFIX_INT:
 		op := ins.(*bytecode.INFIX_INS)
 		
 		leftVal := v.convertToInt(v.Ram[op.Left_addr])

@@ -7,13 +7,23 @@ import (
 type OpLabel int
 
 const (
+	//DATATYPES
 	LOAD_INT OpLabel = iota
-	INFIX_INT
-	DECLARE_VAR
-	REF_VAR
 	LOAD_BOOL
+	LOAD_STRING
+
+	//EXPRS
+	INFIX_INT
+	
+	//JMP
 	JMP
 	JMP_IF_FALSE
+
+	//VARS
+	DECLARE_VAR
+	REF_VAR
+
+	//FUNCS
 	FUNC_DEC_START
 	FUNC_DEC_END
 	FUNC_CALL
@@ -44,6 +54,8 @@ func (l OpLabel) String() string {
 		return "FUNC_CALL"
 	case RETURN:
 		return "RETURN"
+	case LOAD_STRING:
+		return "LOAD_STRING"
 	default:
 		return "UNDEFINED"
 	}
@@ -182,4 +194,17 @@ func (r *RETURN_INS) OpType() OpLabel {
 }
 func (r *RETURN_INS) String() string {
 	return fmt.Sprintf("RETURN %d", r.Ptr)
+}
+
+
+
+type LOAD_STRING_INS struct{
+	Address int
+	Value string
+}
+func (l *LOAD_STRING_INS) OpType() OpLabel{
+	return LOAD_STRING
+}
+func (l *LOAD_STRING_INS) String() string{
+	return fmt.Sprintf("LOAD_STRING ADDR(%d) VALUE(%v)", l.Address, l.Value);
 }
