@@ -18,14 +18,25 @@ type Vm struct {
 	Ram       [1 << 11]any
 	MainScope *Scope
 	CallStack []*CallFrame
+	currScope *Scope
 }
 
 func NewVm() *Vm {
+	s :=NewMainScope();
 	return &Vm{
 		Ins:       []bytecode.Instruction{},
 		Ram:       [1 << 11]any{},
 		insPtr:    0,
-		MainScope: NewMainScope(),
+		MainScope: s,
+		currScope: s,
+		CallStack: []*CallFrame{
+			&CallFrame{
+				Local_scope: s, //Main frame
+				ArgAddrs: []int{},
+				ResumeAddr: -1,
+				PutVal: -1,
+			},
+		},
 	}
 }
 
@@ -129,16 +140,16 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 		name := op.Name
 		startPtr := v.insPtr
 		local_scope.setFunc(name, startPtr)
-
+		fmt.Println("in func_dec_start")
 		delta := 1
 		for {
-			// bounds check
 			if v.insPtr+delta >= len(v.Ins) {
 				panic("[ERROR] Reached end of instructions while scanning for FUNC_DEC_END")
 			}
 
 			if v.Ins[v.insPtr+delta].OpType() == bytecode.FUNC_DEC_END {
-				v.insPtr = v.insPtr + delta
+				v.insPtr = v.insPtr + delta + 1
+				fmt.Printf("next instr: %v\n", v.Ins[v.insPtr]);
 				return
 			}
 
@@ -166,9 +177,10 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 
 		// Map parameters to RAM addresses provided by the compiler
 		for i, valAddr := range op.Params {
+			fmt.Printf("appending variable of name %v to value %v\n", fDec.ParamNames[i], valAddr);
 			fScope.setVar(fDec.ParamNames[i], valAddr)
 		}
-
+		v.currScope = fScope;
 		v.insPtr = startAddr + 1
 
 	}
@@ -187,17 +199,21 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 			v.Ram[callItem.PutVal] = v.Ram[retIns.Ptr]
 			v.insPtr = callItem.ResumeAddr
 			v.CallStack = v.CallStack[:len(v.CallStack)-1]
+			v.currScope = v.CallStack[len(v.CallStack)-1].Local_scope
 			continue // skip v.insPtr++ because we already updated it
 		case bytecode.FUNC_DEC_END:
 			if len(v.CallStack) > 0 {
 				callItem := v.CallStack[len(v.CallStack)-1]
 				v.insPtr = callItem.ResumeAddr
 				v.CallStack = v.CallStack[:len(v.CallStack)-1]
+				v.currScope = v.CallStack[len(v.CallStack)-1].Local_scope
+
 				continue
 			}
-		}
 
-		v.executeIns(ins, v.MainScope)
+		}
+		fmt.Printf("Executing instruciton: %v\n", v.Ins[v.insPtr])
+		v.executeIns(v.Ins[v.insPtr], v.currScope)
 		v.insPtr++
 	}
 
