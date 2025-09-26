@@ -173,12 +173,22 @@ func TestCompiler(t *testing.T) {
 				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 1},
 				&bytecode.RETURN_INS{Ptr: 2},
 				&bytecode.FUNC_DEC_END_INS{},
-				&bytecode.LOAD_INT_INS{Address: 0, Value: 2},
-				&bytecode.LOAD_INT_INS{Address: 1, Value: 3},
-				&bytecode.FUNC_CALL_INS{Params: []int{0, 1}, Name: "add", PutRet: 2},
-				&bytecode.DECLARE_VAR_INS{Name: "c", Addr: 2},
+				&bytecode.LOAD_INT_INS{Address: 3, Value: 2},
+				&bytecode.LOAD_INT_INS{Address: 4, Value: 3},
+				&bytecode.FUNC_CALL_INS{Params: []int{3, 4}, Name: "add", PutRet: 5},
+				&bytecode.DECLARE_VAR_INS{Name: "c", Addr: 5},
 			},
 			id: 14,
+		},
+		{
+			input: "let x = 5 % 2;",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_INT_INS{Address: 0, Value: 5},
+				&bytecode.LOAD_INT_INS{Address: 1, Value: 2},
+				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 13},
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 2},
+			},
+			id: 15,
 		},
 	}
 	for _, tt := range tests {

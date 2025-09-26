@@ -30,7 +30,7 @@ func NewVm() *Vm {
 		MainScope: s,
 		currScope: s,
 		CallStack: []*CallFrame{
-			&CallFrame{
+			{
 				Local_scope: s, //Main frame
 				ArgAddrs: []int{},
 				ResumeAddr: -1,
@@ -76,9 +76,9 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 	case bytecode.LOAD_INT:
 		op := ins.(*bytecode.LOAD_INT_INS)
 		v.Ram[op.Address] = op.Value
-	case bytecode.INFIX_INT:
+		case bytecode.INFIX_INT:
 		op := ins.(*bytecode.INFIX_INS)
-
+		
 		leftVal := v.convertToInt(v.Ram[op.Left_addr])
 		rightVal := v.convertToInt(v.Ram[op.Right_addr])
 		switch op.Operation {
@@ -106,6 +106,8 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 			v.Ram[op.Save_to_addr] = leftVal == rightVal
 		case 10:
 			v.Ram[op.Save_to_addr] = leftVal != rightVal
+		case 13:
+			v.Ram[op.Save_to_addr] = leftVal % rightVal;
 		case 11:
 			bLeft := v.convertToBool(v.Ram[op.Left_addr])
 			bRight := v.convertToBool(v.Ram[op.Right_addr])
@@ -122,7 +124,11 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 		local_scope.setVar(op.Name, op.Addr)
 	case bytecode.REF_VAR:
 		op := ins.(*bytecode.REF_VAR_INS)
-		v.Ram[op.SaveTo] = v.Ram[local_scope.getVar(op.Name)]
+		varAddr := local_scope.getVar(op.Name)
+		if v.Ram[varAddr] == nil {
+			panic(fmt.Sprintf("[ERROR] Variable %s at address %d contains nil value", op.Name, varAddr))
+		}
+		v.Ram[op.SaveTo] = v.Ram[varAddr]
 	case bytecode.LOAD_BOOL:
 		op := ins.(*bytecode.LOAD_BOOL_INS)
 		v.Ram[op.Address] = op.Value
@@ -140,7 +146,6 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 		name := op.Name
 		startPtr := v.insPtr
 		local_scope.setFunc(name, startPtr)
-		fmt.Println("in func_dec_start")
 		delta := 1
 		for {
 			if v.insPtr+delta >= len(v.Ins) {
@@ -148,8 +153,7 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 			}
 
 			if v.Ins[v.insPtr+delta].OpType() == bytecode.FUNC_DEC_END {
-				v.insPtr = v.insPtr + delta + 1
-				fmt.Printf("next instr: %v\n", v.Ins[v.insPtr]);
+				v.insPtr = v.insPtr + delta
 				return
 			}
 
@@ -172,23 +176,20 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 			PutVal:      op.PutRet,
 		}
 		v.CallStack = append(v.CallStack, callFrame)
-
 		fDec := v.Ins[startAddr].(*bytecode.FUNC_DEC_START_INS)
 
 		// Map parameters to RAM addresses provided by the compiler
 		for i, valAddr := range op.Params {
-			fmt.Printf("appending variable of name %v to value %v\n", fDec.ParamNames[i], valAddr);
 			fScope.setVar(fDec.ParamNames[i], valAddr)
 		}
 		v.currScope = fScope;
-		v.insPtr = startAddr + 1
+		v.insPtr = startAddr;
 
 	}
 }
 
 func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1 << 11]any, map[string]any) {
 	v.Ins = instructions
-
 	for v.insPtr < len(v.Ins) {
 		ins := v.Ins[v.insPtr]
 
@@ -200,7 +201,7 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 			v.insPtr = callItem.ResumeAddr
 			v.CallStack = v.CallStack[:len(v.CallStack)-1]
 			v.currScope = v.CallStack[len(v.CallStack)-1].Local_scope
-			continue // skip v.insPtr++ because we already updated it
+			continue
 		case bytecode.FUNC_DEC_END:
 			if len(v.CallStack) > 0 {
 				callItem := v.CallStack[len(v.CallStack)-1]
@@ -212,19 +213,16 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 			}
 
 		}
-		fmt.Printf("Executing instruciton: %v\n", v.Ins[v.insPtr])
 		v.executeIns(v.Ins[v.insPtr], v.currScope)
 		v.insPtr++
 	}
 
 	if shouldPrint {
-		fmt.Printf("RAM: ")
-		for i := range 2048 {
-			if v.Ram[i] != nil {
-				fmt.Printf("{%v}, ", v.Ram[i])
-			}
+		var vals map[string]any = make(map[string]any);
+		for key, val := range v.MainScope.Vars{
+			vals[key] = v.Ram[val];
 		}
-		fmt.Print("\n")
+		fmt.Printf("%+v\n", vals);
 	}
 	toReturnVars := make(map[string]any)
 	for key, val := range v.MainScope.Vars {

@@ -70,7 +70,7 @@ type INFIX_INS struct {
 	Left_addr    int
 	Right_addr   int
 	Save_to_addr int
-	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide 5 for less then 6 for less then eqt 7 for greater then 8 for greater then eqt 9 for equals, 10 for not equals, 11 for and, 12 for or
+	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide 5 for less then 6 for less then eqt 7 for greater then 8 for greater then eqt 9 for equals, 10 for not equals, 11 for and, 12 for or, 13 for modulo
 }
 
 func (a *INFIX_INS) OpType() OpLabel {

@@ -1634,6 +1634,22 @@ if arr[0] == 0{
 			},
 			id: 43,
 		},
+		{
+			input: "let x = 5 % 2;",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{
+						Name: "x",
+						Value: &ast.InfixExprNode{
+							Left: &ast.IntLiteralNode{Value: 5},
+							Operator: token.MODULO,
+							Right: &ast.IntLiteralNode{Value: 2},
+						},
+					},
+				},
+			},
+			id: 44,
+		},
 	}
 
 	for _, tt := range tests {

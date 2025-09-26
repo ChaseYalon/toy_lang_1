@@ -179,6 +179,14 @@ func TestVM(t *testing.T) {
 			},
 			id: 13,
 		},
+		{
+			input: "let x = 5; let y = x+2;",
+			vars: map[string]any{
+				"x": 5,
+				"y": 7,
+			},
+			id: 14,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

@@ -57,6 +57,8 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 			opInstr = 3
 		case token.DIVIDE:
 			opInstr = 4
+		case token.MODULO:
+			opInstr = 13
 		default:
 			panic(fmt.Sprintf("[ERROR] %v is not a valid infix operator", infixNode.Operator))
 		}
@@ -117,6 +119,7 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 			opInstr = 11
 		case token.OR:
 			opInstr = 12
+
 		default:
 			panic(fmt.Sprintf("[ERROR] %v is not a valid infix operator", infixNode.Operator))
 		}
@@ -228,11 +231,10 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 
 		//Local frame memory counter
 
-		localBestMem := c.currBestAdr
+		//localBestMem := c.currBestAdr
 		for _, val := range fDecNode.Body {
-			c.compileStmt(val, &localBestMem)
+			c.compileStmt(val, &c.currBestAdr)
 		}
-		// Emit function end (correct instruction)
 		c.emit(&bytecode.FUNC_DEC_END_INS{})
 		return
 	}
@@ -243,9 +245,6 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 func (c *Compiler) Compile(input ast.ProgramNode) []bytecode.Instruction {
 	for _, val := range input.Statements {
 		c.compileStmt(val, &c.currBestAdr)
-	}
-	for _, val := range c.ins {
-		fmt.Printf("%v\n", val)
 	}
 	return c.ins
 }
