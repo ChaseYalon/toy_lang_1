@@ -3,6 +3,7 @@
         "bres",
         "brks",
         "empt",
+        "ferr",
         "println",
         "randf",
         "serr",

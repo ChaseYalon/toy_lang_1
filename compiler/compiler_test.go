@@ -242,35 +242,63 @@ func TestCompiler(t *testing.T) {
 				&bytecode.DECLARE_VAR_INS{Addr: 0, Name: "x"},
 
 				// while condition start
-				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 1}, //0
-				&bytecode.LOAD_INT_INS{Address: 2, Value: 100}, //1
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 1},                                     //0
+				&bytecode.LOAD_INT_INS{Address: 2, Value: 100},                                  //1
 				&bytecode.INFIX_INS{Left_addr: 1, Right_addr: 2, Save_to_addr: 3, Operation: 5}, //3 // x < 100
-				&bytecode.JMP_IF_FALSE_INS{CondAddr: 3, TargetAddr: 21}, //4
-				
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 3, TargetAddr: 21},                         //4
+
 				// x++
-				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 4}, //5
-				&bytecode.LOAD_INT_INS{Address: 5, Value: 1}, //6
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 4},                                     //5
+				&bytecode.LOAD_INT_INS{Address: 5, Value: 1},                                    //6
 				&bytecode.INFIX_INS{Left_addr: 4, Right_addr: 5, Save_to_addr: 6, Operation: 1}, //7
-				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 6}, //8
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 6},                                   //8
 
 				// if x == 7
-				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 7}, //9
-				&bytecode.LOAD_INT_INS{Address: 8, Value: 7}, //10
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 7},                                     //9
+				&bytecode.LOAD_INT_INS{Address: 8, Value: 7},                                    //10
 				&bytecode.INFIX_INS{Left_addr: 7, Right_addr: 8, Save_to_addr: 9, Operation: 9}, //11  // x == 7
-				&bytecode.JMP_IF_FALSE_INS{CondAddr: 9, TargetAddr: 14}, //12                         // skip continue if false
-				&bytecode.JMP_INS{InstNum: 3}, //13                                                   // continue → back to while condition
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 9, TargetAddr: 14},                         //12                         // skip continue if false
+				&bytecode.JMP_INS{InstNum: 3},                                                   //13                                                   // continue → back to while condition
 
 				// if x == 8
-				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 10}, //14
-				&bytecode.LOAD_INT_INS{Address: 11, Value: 8}, //15
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 10},                                       //14
+				&bytecode.LOAD_INT_INS{Address: 11, Value: 8},                                      //15
 				&bytecode.INFIX_INS{Left_addr: 10, Right_addr: 11, Save_to_addr: 12, Operation: 9}, //16 // x == 8
-				&bytecode.JMP_IF_FALSE_INS{CondAddr: 12, TargetAddr: 19}, //17                        // skip break if false
-				&bytecode.JMP_INS{InstNum: 21}, //18                                                  // break → exit loop
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 12, TargetAddr: 19},                           //17                        // skip break if false
+				&bytecode.JMP_INS{InstNum: 21},                                                     //18                                                  // break → exit loop
 
 				// jump back to start of while condition
 				&bytecode.JMP_INS{InstNum: 1}, //19
 			},
 			id: 20,
+		},
+		{
+			input: "let pi = 3.1415965;",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_FLOAT_INS{Address: 0, Value: 3.1415965},
+				&bytecode.DECLARE_VAR_INS{Name: "pi", Addr: 0},
+			},
+			id: 21,
+		},
+		{
+			input: "let x = 3.4 * 9.2;",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_FLOAT_INS{Address: 0, Value: 3.4},
+				&bytecode.LOAD_FLOAT_INS{Address: 1, Value: 9.2},
+				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 3},
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 2},
+			},
+			id: 22,
+		},
+		{
+			input: "let x = 1.0 == 1.0;",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_FLOAT_INS{Address: 0, Value: 1.0},
+				&bytecode.LOAD_FLOAT_INS{Address: 1, Value: 1.0},
+				&bytecode.INFIX_INS{Left_addr: 0, Right_addr: 1, Save_to_addr: 2, Operation: 9},
+				&bytecode.DECLARE_VAR_INS{Addr: 2, Name: "x"},
+			},
+			id: 23,
 		},
 	}
 	for _, tt := range tests {

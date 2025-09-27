@@ -11,6 +11,7 @@ const (
 	LOAD_INT OpLabel = iota
 	LOAD_BOOL
 	LOAD_STRING
+	LOAD_FLOAT
 
 	//EXPRS
 	INFIX_INT
@@ -57,6 +58,8 @@ func (l OpLabel) String() string {
 		return "RETURN"
 	case LOAD_STRING:
 		return "LOAD_STRING"
+	case LOAD_FLOAT:
+		return "LOAD_FLOAT"
 	default:
 		return "UNDEFINED"
 	}
@@ -83,7 +86,7 @@ type INFIX_INS struct {
 	Left_addr    int
 	Right_addr   int
 	Save_to_addr int
-	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide 5 for less then 6 for less then eqt 7 for greater then 8 for greater then eqt 9 for equals, 10 for not equals, 11 for and, 12 for or, 13 for modulo
+	Operation    int // 1 for add 2 for subtract 3 for multiply 4 for divide 5 for less then 6 for less then eqt 7 for greater then 8 for greater then eqt, 9 for equals, 10 for not equals, 11 for and, 12 for or, 13 for modulo
 }
 
 func (a *INFIX_INS) OpType() OpLabel {
@@ -220,4 +223,16 @@ func (c *CALL_BUILTIN_INS) OpType() OpLabel {
 }
 func (c *CALL_BUILTIN_INS) String() string {
 	return fmt.Sprintf("CALL_BUILTIN PARAMS(%+d) NAME(%v) SAVE_VAL(%d)", c.Params, c.Name, c.PutRet)
+}
+
+type LOAD_FLOAT_INS struct {
+	Value   float64
+	Address int
+}
+
+func (l *LOAD_FLOAT_INS) OpType() OpLabel {
+	return LOAD_FLOAT
+}
+func (l *LOAD_FLOAT_INS) String() string {
+	return fmt.Sprintf("LOAD_FLOAT ADDR(%d) VALUE(%f)", l.Address, l.Value)
 }

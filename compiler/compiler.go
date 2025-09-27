@@ -7,9 +7,9 @@ import (
 	"toy_lang/token"
 )
 
-type WhileStmtRecord struct{
+type WhileStmtRecord struct {
 	CondAddr int
-	brks []*bytecode.JMP_INS
+	brks     []*bytecode.JMP_INS
 }
 
 type Compiler struct {
@@ -17,7 +17,7 @@ type Compiler struct {
 	currBestAdr int
 	//Hash set to check if a function name is predefined
 	builtinFuncs map[string]string
-	whileStack []*WhileStmtRecord
+	whileStack   []*WhileStmtRecord
 }
 
 func NewCompiler() *Compiler {
@@ -37,16 +37,16 @@ func NewCompiler() *Compiler {
 }
 
 func (c *Compiler) pushWhile(stmt *WhileStmtRecord) {
-    c.whileStack = append(c.whileStack, stmt)
+	c.whileStack = append(c.whileStack, stmt)
 }
 
 func (c *Compiler) popWhile() *WhileStmtRecord {
-    if len(c.whileStack) == 0 {
-        panic("popWhile: stack is empty")
-    }
-    last := c.whileStack[len(c.whileStack)-1]
-    c.whileStack = c.whileStack[:len(c.whileStack)-1]
-    return last
+	if len(c.whileStack) == 0 {
+		panic("popWhile: stack is empty")
+	}
+	last := c.whileStack[len(c.whileStack)-1]
+	c.whileStack = c.whileStack[:len(c.whileStack)-1]
+	return last
 }
 func (c *Compiler) emit(ins bytecode.Instruction) {
 	c.ins = append(c.ins, ins)
@@ -64,6 +64,16 @@ func (c *Compiler) compileExpr(node ast.Node, mem *int) int {
 		toRet := bytecode.LOAD_INT_INS{
 			Address: *mem,
 			Value:   intNode.Value,
+		}
+		*mem = *mem + 1
+		c.emit(&toRet)
+		return *mem - 1
+	}
+	if node.NodeType() == ast.FloatLiteral {
+		fNode := node.(*ast.FloatLiteralNode)
+		toRet := bytecode.LOAD_FLOAT_INS{
+			Address: *mem,
+			Value:   fNode.Value,
 		}
 		*mem = *mem + 1
 		c.emit(&toRet)
@@ -212,7 +222,8 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 		node.NodeType() == ast.BoolLiteral ||
 		node.NodeType() == ast.BoolInfix ||
 		node.NodeType() == ast.EmptyExpr ||
-		node.NodeType() == ast.ReturnExpr {
+		node.NodeType() == ast.ReturnExpr ||
+		node.NodeType() == ast.FloatLiteral {
 		c.compileExpr(node, mem)
 		return
 	}
@@ -280,10 +291,10 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 			TargetAddr: -1, // placeholder
 		}
 		c.emit(jmpFalse)
-		var breaks []*bytecode.JMP_INS;
+		var breaks []*bytecode.JMP_INS
 		c.pushWhile(&WhileStmtRecord{
 			CondAddr: condAddr,
-			brks: breaks,
+			brks:     breaks,
 		})
 		for _, stmt := range whileNode.Body {
 			c.compileStmt(stmt, mem)
@@ -293,27 +304,27 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 			condInsNum = 1
 		}
 		c.emit(&bytecode.JMP_INS{InstNum: condInsNum - 1})
-		lastWhile := c.popWhile();
+		lastWhile := c.popWhile()
 		jmpFalse.TargetAddr = len(c.ins)
-		for _, val := range lastWhile.brks{
-			val.InstNum= len(c.ins);
+		for _, val := range lastWhile.brks {
+			val.InstNum = len(c.ins)
 		}
 		return
 	}
-	if node.NodeType() == ast.ContinueStmt{
-		lastWhile := c.popWhile();
+	if node.NodeType() == ast.ContinueStmt {
+		lastWhile := c.popWhile()
 		c.emit(&bytecode.JMP_INS{InstNum: lastWhile.CondAddr})
 		c.pushWhile(lastWhile)
-		return;
+		return
 	}
-	if node.NodeType() == ast.BreakSmt{
-		lastWhile := c.popWhile();
+	if node.NodeType() == ast.BreakSmt {
+		lastWhile := c.popWhile()
 		ins := &bytecode.JMP_INS{InstNum: -1} //Placeholder
-		lastWhile.brks = append(lastWhile.brks, ins);
+		lastWhile.brks = append(lastWhile.brks, ins)
 		c.emit(ins)
 
-		c.pushWhile(lastWhile);
-		return;
+		c.pushWhile(lastWhile)
+		return
 	}
 
 	if node.NodeType() == ast.FuncDec {

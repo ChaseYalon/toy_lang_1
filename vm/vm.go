@@ -43,6 +43,27 @@ func NewVm() *Vm {
 		},
 	}
 }
+func (v *Vm) convertToFloat(input any) (float64, error) {
+	switch t := input.(type) {
+	case int:
+		return float64(t), nil
+	case bool:
+		if t {
+			return 1.0, nil
+		}
+		return 0.0, nil
+	case float64:
+		return t, nil
+	case string:
+		f, err := strconv.ParseFloat(t, 64)
+		if err != nil {
+			return -1.0, err
+		}
+		return f, nil
+	default:
+		return -1.0, fmt.Errorf("[ERROR] Could not convert %v (type %T) into a float", input, input)
+	}
+}
 
 func (v *Vm) convertToInt(input any) (int, error) {
 	switch t := input.(type) {
@@ -61,6 +82,10 @@ func (v *Vm) convertToInt(input any) (int, error) {
 		if err != nil {
 			return -1, err
 		}
+		return i, nil
+	case float64:
+		f := input.(float64)
+		i := int(f)
 		return i, nil
 	default:
 		return -1, fmt.Errorf("[ERROR] Could not convert %v of type %v to an int", input, t)
@@ -89,6 +114,13 @@ func (v *Vm) convertToBool(input any) (bool, error) {
 			return false, nil
 		}
 		return true, nil
+	case float64:
+		f := input.(float64)
+		if f > 0.0 {
+			return true, nil
+		} else {
+			return false, nil
+		}
 	default:
 		return false, fmt.Errorf("[ERROR] Could not convert type %v into a bool", t)
 	}
@@ -104,8 +136,19 @@ func (v *Vm) convertToString(input any) (string, error) {
 	case string:
 		s := input.(string)
 		return s, nil
+	case float64:
+		f := input.(float64)
+		return fmt.Sprintf("%f", f), nil
 	default:
 		return "", fmt.Errorf("[ERROR] Could not convert type of %v into a string", t)
+	}
+}
+func isFloat(v any) bool {
+	switch v.(type) {
+	case float32, float64:
+		return true
+	default:
+		return false
 	}
 }
 
@@ -117,8 +160,50 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 	case bytecode.LOAD_STRING:
 		op := ins.(*bytecode.LOAD_STRING_INS)
 		v.Ram[op.Address] = op.Value
+	case bytecode.LOAD_FLOAT:
+		op := ins.(*bytecode.LOAD_FLOAT_INS)
+		v.Ram[op.Address] = op.Value
 	case bytecode.INFIX_INT:
 		op := ins.(*bytecode.INFIX_INS)
+
+		lIsFloat := isFloat(v.Ram[op.Left_addr])
+		rIsFloat := isFloat(v.Ram[op.Right_addr])
+		if lIsFloat || rIsFloat {
+			leftF, ferr1 := v.convertToFloat(v.Ram[op.Left_addr])
+			rightF, ferr2 := v.convertToFloat(v.Ram[op.Right_addr])
+			if ferr1 != nil || ferr2 != nil {
+				panic(fmt.Sprintf("[ERROR] Op: %v, Err 1: %v, Err2: %v", op, ferr1, ferr2))
+			}
+			switch op.Operation {
+			case 1:
+				v.Ram[op.Save_to_addr] = leftF + rightF
+				return
+			case 2:
+				v.Ram[op.Save_to_addr] = leftF - rightF
+				return
+			case 3:
+				v.Ram[op.Save_to_addr] = leftF * rightF
+				return
+			case 4:
+				v.Ram[op.Save_to_addr] = leftF / rightF
+				return
+			case 5:
+				v.Ram[op.Save_to_addr] = leftF < rightF
+			case 6:
+				v.Ram[op.Save_to_addr] = leftF <= rightF
+			case 7:
+				v.Ram[op.Save_to_addr] = leftF > rightF
+			case 8:
+				v.Ram[op.Save_to_addr] = leftF >= rightF
+			case 9:
+				v.Ram[op.Save_to_addr] = leftF == rightF
+			case 10:
+				v.Ram[op.Save_to_addr] = leftF != rightF
+			default:
+				panic(fmt.Sprintf("[ERROR] Unknown operator, got %v\n", op.Operation))
+
+			}
+		}
 
 		leftVal, err1 := v.convertToInt(v.Ram[op.Left_addr])
 		rightVal, err2 := v.convertToInt(v.Ram[op.Right_addr])
@@ -129,6 +214,7 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 				rightStr, serr2 := v.convertToString(v.Ram[op.Right_addr])
 				if serr1 != nil || serr2 != nil {
 					panic(fmt.Sprintf("[ERROR] Op: %v, Err 1: %v, Err2: %v", op, err1, err2))
+
 				}
 				if op.Operation == 1 {
 					v.Ram[op.Save_to_addr] = leftStr + rightStr
@@ -308,6 +394,7 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 	v.Ins = instructions
 	for v.insPtr < len(v.Ins) {
 		ins := v.Ins[v.insPtr]
+		fmt.Printf("Current instruction: %v\n", ins)
 		switch ins.OpType() {
 		case bytecode.RETURN:
 			retIns := ins.(*bytecode.RETURN_INS)
