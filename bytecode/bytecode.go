@@ -142,14 +142,14 @@ func (j *JMP_INS) String() string {
 
 type JMP_IF_FALSE_INS struct {
 	CondAddr   int //Address with the bool
-	TargetAddr int
+	TargetAddr int //Instruction number to jump to if false
 }
 
 func (j *JMP_IF_FALSE_INS) OpType() OpLabel {
 	return JMP_IF_FALSE
 }
 func (j *JMP_IF_FALSE_INS) String() string {
-	return fmt.Sprintf("JUMP_TO_IF CondADDR(%d) JmpToAddr(%d)", j.CondAddr, j.TargetAddr)
+	return fmt.Sprintf("JMP_IF_FALSE CondADDR(%d) JmpToAddr(%d)", j.CondAddr, j.TargetAddr)
 }
 
 type FUNC_DEC_START_INS struct {

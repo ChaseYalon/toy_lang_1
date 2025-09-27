@@ -128,7 +128,7 @@ func (v *Vm) executeIns(ins bytecode.Instruction, local_scope *Scope) {
 				leftStr, serr1 := v.convertToString(v.Ram[op.Left_addr])
 				rightStr, serr2 := v.convertToString(v.Ram[op.Right_addr])
 				if serr1 != nil || serr2 != nil {
-					panic(fmt.Sprintf("[ERROR] %v, %v", err1, err2))
+					panic(fmt.Sprintf("[ERROR] Op: %v, Err 1: %v, Err2: %v", op, err1, err2))
 				}
 				if op.Operation == 1 {
 					v.Ram[op.Save_to_addr] = leftStr + rightStr
@@ -308,7 +308,6 @@ func (v *Vm) Execute(instructions []bytecode.Instruction, shouldPrint bool) (*[1
 	v.Ins = instructions
 	for v.insPtr < len(v.Ins) {
 		ins := v.Ins[v.insPtr]
-
 		switch ins.OpType() {
 		case bytecode.RETURN:
 			retIns := ins.(*bytecode.RETURN_INS)

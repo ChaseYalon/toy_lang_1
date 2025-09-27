@@ -224,6 +224,20 @@ func TestVM(t *testing.T) {
 			},
 			id: 19,
 		},
+		{
+			input: `let x = 0; while x < 10{x++;}`,
+			vars: map[string]any{
+				"x": 10,
+			},
+			id: 20,
+		},
+		{
+			input: "let x = 0; while x < 100{x++; if x == 7{continue;} if x == 8{break;}",
+			vars: map[string]any{
+				"x": 8,
+			},
+			id: 21,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

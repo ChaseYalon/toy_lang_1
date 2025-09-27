@@ -1650,6 +1650,32 @@ if arr[0] == 0{
 			},
 			id: 44,
 		},
+		{
+			input: "let x = 0; while x < 10{x++;}",
+			output: ast.ProgramNode{
+				Statements: []ast.Node{
+					&ast.LetStmtNode{Name: "x", Value: &ast.IntLiteralNode{Value: 0}},
+					&ast.WhileStmtNode{
+						Cond: &ast.BoolInfixNode{
+							Left:     &ast.ReferenceExprNode{Name: "x"},
+							Operator: token.LESS_THAN,
+							Right:    &ast.IntLiteralNode{Value: 10},
+						},
+						Body: []ast.Node{
+							&ast.VarReassignNode{
+								Var: ast.ReferenceExprNode{Name: "x"},
+								NewVal: &ast.InfixExprNode{
+									Left:     &ast.ReferenceExprNode{Name: "x"},
+									Operator: token.PLUS,
+									Right:    &ast.IntLiteralNode{Value: 1},
+								},
+							},
+						},
+					},
+				},
+			},
+			id: 45,
+		},
 	}
 
 	for _, tt := range tests {

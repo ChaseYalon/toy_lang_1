@@ -96,6 +96,8 @@ func (n AstNode) String() string {
 		return "ARR_REF"
 	case ArrReassign:
 		return "ARR_REASSIGN"
+	case WhileStmt:
+		return "WHILE_STMT"
 	default:
 		return "ILLEGAL"
 	}

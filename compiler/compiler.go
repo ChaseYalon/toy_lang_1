@@ -7,11 +7,17 @@ import (
 	"toy_lang/token"
 )
 
+type WhileStmtRecord struct{
+	CondAddr int
+	brks []*bytecode.JMP_INS
+}
+
 type Compiler struct {
 	ins         []bytecode.Instruction
 	currBestAdr int
 	//Hash set to check if a function name is predefined
 	builtinFuncs map[string]string
+	whileStack []*WhileStmtRecord
 }
 
 func NewCompiler() *Compiler {
@@ -26,9 +32,22 @@ func NewCompiler() *Compiler {
 			"int":     "int",
 			"bool":    "bool",
 		},
+		whileStack: []*WhileStmtRecord{},
 	}
 }
 
+func (c *Compiler) pushWhile(stmt *WhileStmtRecord) {
+    c.whileStack = append(c.whileStack, stmt)
+}
+
+func (c *Compiler) popWhile() *WhileStmtRecord {
+    if len(c.whileStack) == 0 {
+        panic("popWhile: stack is empty")
+    }
+    last := c.whileStack[len(c.whileStack)-1]
+    c.whileStack = c.whileStack[:len(c.whileStack)-1]
+    return last
+}
 func (c *Compiler) emit(ins bytecode.Instruction) {
 	c.ins = append(c.ins, ins)
 }
@@ -247,9 +266,54 @@ func (c *Compiler) compileStmt(node ast.Node, mem *int) {
 
 			jmp.InstNum = len(c.ins)
 		} else {
-			jmpFalse.TargetAddr = len(c.ins)
+			jmpFalse.TargetAddr = len(c.ins) - 1
 		}
 		return
+	}
+	if node.NodeType() == ast.WhileStmt {
+		whileNode := node.(*ast.WhileStmtNode)
+		condInsNum := len(c.ins)
+		condAddr := c.compileExpr(whileNode.Cond, mem)
+
+		jmpFalse := &bytecode.JMP_IF_FALSE_INS{
+			CondAddr:   condAddr,
+			TargetAddr: -1, // placeholder
+		}
+		c.emit(jmpFalse)
+		var breaks []*bytecode.JMP_INS;
+		c.pushWhile(&WhileStmtRecord{
+			CondAddr: condAddr,
+			brks: breaks,
+		})
+		for _, stmt := range whileNode.Body {
+			c.compileStmt(stmt, mem)
+		}
+		//This section here is awful and will cause bugs
+		if condInsNum == 0 {
+			condInsNum = 1
+		}
+		c.emit(&bytecode.JMP_INS{InstNum: condInsNum - 1})
+		lastWhile := c.popWhile();
+		jmpFalse.TargetAddr = len(c.ins)
+		for _, val := range lastWhile.brks{
+			val.InstNum= len(c.ins);
+		}
+		return
+	}
+	if node.NodeType() == ast.ContinueStmt{
+		lastWhile := c.popWhile();
+		c.emit(&bytecode.JMP_INS{InstNum: lastWhile.CondAddr})
+		c.pushWhile(lastWhile)
+		return;
+	}
+	if node.NodeType() == ast.BreakSmt{
+		lastWhile := c.popWhile();
+		ins := &bytecode.JMP_INS{InstNum: -1} //Placeholder
+		lastWhile.brks = append(lastWhile.brks, ins);
+		c.emit(ins)
+
+		c.pushWhile(lastWhile);
+		return;
 	}
 
 	if node.NodeType() == ast.FuncDec {

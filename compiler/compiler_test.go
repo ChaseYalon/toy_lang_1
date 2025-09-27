@@ -206,6 +206,72 @@ func TestCompiler(t *testing.T) {
 			},
 			id: 17,
 		},
+		{
+			input: `while true{println("hello")}`,
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_BOOL_INS{Address: 0, Value: true},
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 0, TargetAddr: 5},
+				&bytecode.LOAD_STRING_INS{Address: 1, Value: "hello"},
+				&bytecode.CALL_BUILTIN_INS{Name: "println", Params: []int{1}, PutRet: 2},
+				&bytecode.JMP_INS{InstNum: 0},
+			},
+			id: 18,
+		},
+		{
+			input: "let x = 0; while x < 10{x++;}",
+			output: []bytecode.Instruction{
+				&bytecode.LOAD_INT_INS{Address: 0, Value: 0},
+				&bytecode.DECLARE_VAR_INS{Addr: 0, Name: "x"},
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 1},
+				&bytecode.LOAD_INT_INS{Address: 2, Value: 10},
+				&bytecode.INFIX_INS{Left_addr: 1, Right_addr: 2, Operation: 5, Save_to_addr: 3},
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 3, TargetAddr: 11},
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 4},
+				&bytecode.LOAD_INT_INS{Address: 5, Value: 1},
+				&bytecode.INFIX_INS{Left_addr: 4, Right_addr: 5, Operation: 1, Save_to_addr: 6},
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 6},
+				&bytecode.JMP_INS{InstNum: 1},
+			},
+			id: 19,
+		},
+		{
+			input: "let x = 0; while x < 100{x++; if x == 7{continue;} if x == 8{break;}}",
+			output: []bytecode.Instruction{
+				// let x = 0
+				&bytecode.LOAD_INT_INS{Address: 0, Value: 0},
+				&bytecode.DECLARE_VAR_INS{Addr: 0, Name: "x"},
+
+				// while condition start
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 1}, //0
+				&bytecode.LOAD_INT_INS{Address: 2, Value: 100}, //1
+				&bytecode.INFIX_INS{Left_addr: 1, Right_addr: 2, Save_to_addr: 3, Operation: 5}, //3 // x < 100
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 3, TargetAddr: 21}, //4
+				
+				// x++
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 4}, //5
+				&bytecode.LOAD_INT_INS{Address: 5, Value: 1}, //6
+				&bytecode.INFIX_INS{Left_addr: 4, Right_addr: 5, Save_to_addr: 6, Operation: 1}, //7
+				&bytecode.DECLARE_VAR_INS{Name: "x", Addr: 6}, //8
+
+				// if x == 7
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 7}, //9
+				&bytecode.LOAD_INT_INS{Address: 8, Value: 7}, //10
+				&bytecode.INFIX_INS{Left_addr: 7, Right_addr: 8, Save_to_addr: 9, Operation: 9}, //11  // x == 7
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 9, TargetAddr: 14}, //12                         // skip continue if false
+				&bytecode.JMP_INS{InstNum: 3}, //13                                                   // continue → back to while condition
+
+				// if x == 8
+				&bytecode.REF_VAR_INS{Name: "x", SaveTo: 10}, //14
+				&bytecode.LOAD_INT_INS{Address: 11, Value: 8}, //15
+				&bytecode.INFIX_INS{Left_addr: 10, Right_addr: 11, Save_to_addr: 12, Operation: 9}, //16 // x == 8
+				&bytecode.JMP_IF_FALSE_INS{CondAddr: 12, TargetAddr: 19}, //17                        // skip break if false
+				&bytecode.JMP_INS{InstNum: 21}, //18                                                  // break → exit loop
+
+				// jump back to start of while condition
+				&bytecode.JMP_INS{InstNum: 1}, //19
+			},
+			id: 20,
+		},
 	}
 	for _, tt := range tests {
 		lex := lexer.NewLexer()

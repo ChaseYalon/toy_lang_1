@@ -157,7 +157,7 @@ func (p *Parser) parseSubExpression(tokens []token.Token, subNodes []*ast.EmptyE
 			}
 			return subNodes[0]
 		default:
-			panic(fmt.Sprintf("[ERROR] Unexpected single token: %+v", tok))
+			panic(fmt.Sprintf("[ERROR] ted single token: %+v", tok))
 		}
 	}
 	hasOperator, _ := includesAny(tokens, []token.TokenType{
